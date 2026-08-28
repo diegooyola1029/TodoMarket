@@ -1,0 +1,4 @@
+package minimercado.repositorio;
+import java.util.*; import minimercado.modelo.Producto;
+/** Implementación temporal del repositorio: conserva productos en un ArrayList durante la ejecución. */
+public class MemoriaProductoRepository implements ProductoRepository { private final ArrayList<Producto> productos=new ArrayList<>(); public void guardar(Producto p){productos.add(p);} public List<Producto> listar(){return new ArrayList<>(productos);} public Optional<Producto> buscarPorId(int id){return productos.stream().filter(p->p.getIdProducto()==id).findFirst();} public void actualizar(Producto producto){if(buscarPorId(producto.getIdProducto()).isEmpty())throw new IllegalArgumentException("Producto no encontrado.");} public boolean eliminar(int id){return productos.removeIf(p->p.getIdProducto()==id);} }

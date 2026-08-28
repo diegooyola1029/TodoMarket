@@ -1,0 +1,3 @@
+package minimercado.modelo;
+/** Línea de una compra a proveedor; conserva producto, cantidad y subtotal. */
+public class DetalleCompra { private int idDetalleCompra,cantidad; private Producto producto; private double precioUnitario,subtotal; public DetalleCompra(int id,Producto p,int c,double precio){if(c<=0||precio<0)throw new IllegalArgumentException("Cantidad o precio inválido.");idDetalleCompra=id;producto=p;cantidad=c;precioUnitario=precio;calcularSubtotal();} public double calcularSubtotal(){return subtotal=cantidad*precioUnitario;} public Producto getProducto(){return producto;} public int getCantidad(){return cantidad;} public double getSubtotal(){return subtotal;} }
