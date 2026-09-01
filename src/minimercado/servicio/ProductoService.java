@@ -35,18 +35,9 @@ public class ProductoService {
     }
 
     public void actualizar(Producto datos) {
-        Producto p = buscar(datos.getIdProducto());
-        p.setNombre(datos.getNombre());
-        p.setDescripcion(datos.getDescripcion());
-        p.setPrecioCompra(datos.getPrecioCompra());
-        p.setPrecioVenta(datos.getPrecioVenta());
-        p.setStock(datos.getStock());
-        p.setStockMinimo(datos.getStockMinimo());
-        p.setLote(datos.getLote());
-        p.setFechaVencimiento(datos.getFechaVencimiento());
-        p.setCategoria(datos.getCategoria());
-        repository.actualizar(p);
-        inventario.notificar("ACTUALIZADO", p);
+        buscar(datos.getIdProducto()); // valida que exista
+        repository.actualizar(datos);  // reemplaza el objeto completo
+        inventario.notificar("ACTUALIZADO", datos);
     }
 
     public void eliminar(int id) {
@@ -58,5 +49,6 @@ public class ProductoService {
 
     public List<Producto> stockBajo()        { return listar().stream().filter(Producto::tieneStockBajo).toList(); }
     public List<Producto> agotados()         { return listar().stream().filter(Producto::estaAgotado).toList(); }
+    public List<Producto> vencidos()         { return listar().stream().filter(Producto::estaVencido).toList(); }
     public List<Producto> proximosAVencer()  { return listar().stream().filter(Producto::estaProximoAVencer).toList(); }
 }

@@ -44,9 +44,14 @@ public class MemoriaProductoRepository implements ProductoRepository {
     }
 
     @Override
-    public void actualizar(Producto producto) {
-        if (buscarPorId(producto.getIdProducto()).isEmpty())
-            throw new IllegalArgumentException("Producto no encontrado.");
+    public void actualizar(Producto p) {
+        for (int i = 0; i < productos.size(); i++) {
+            if (productos.get(i).getIdProducto() == p.getIdProducto()) {
+                productos.set(i, p);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Producto no encontrado.");
     }
 
     @Override

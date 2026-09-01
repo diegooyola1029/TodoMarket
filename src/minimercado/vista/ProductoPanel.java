@@ -12,31 +12,29 @@ import minimercado.modelo.Producto;
 
 /**
  * Vista CRUD de productos.
- * Implementa InventarioObserver (patrón Observer) para recibir alertas
- * automáticas cuando cambia el inventario.
+ * Todo el contenido vive dentro de un JScrollPane externo.
+ * Implementa InventarioObserver (patrón Observer).
  */
 public class ProductoPanel extends JPanel implements InventarioObserver {
 
     private final ProductoController controller;
 
-    // ── Campos del formulario ─────────────────────────────────────────────────
+    // ── Campos ────────────────────────────────────────────────────────────────
     private final JTextField fId          = UIFactory.campoTexto();
     private final JTextField fNombre      = UIFactory.campoTexto();
     private final JTextField fDescripcion = UIFactory.campoTexto();
     private final JTextField fCompra      = UIFactory.campoTexto();
     private final JTextField fVenta       = UIFactory.campoTexto();
     private final JTextField fStock       = UIFactory.campoTexto();
-    private final JTextField fMinimo      = UIFactory.campoTexto();
     private final JTextField fLote        = UIFactory.campoTexto();
     private final JTextField fVencimiento = UIFactory.campoTexto();
-
     private final JComboBox<Categoria> fCategoria = new JComboBox<>(new Categoria[]{
             new Categoria(1, "Granos"),  new Categoria(2, "Lácteos"),
             new Categoria(3, "Bebidas"), new Categoria(4, "Aseo"),
             new Categoria(5, "Otros")
     });
 
-    // ── Tarjetas de estadísticas ──────────────────────────────────────────────
+    // ── Stats ─────────────────────────────────────────────────────────────────
     private final JLabel lblTotal    = new JLabel("0");
     private final JLabel lblBajos    = new JLabel("0");
     private final JLabel lblAgotados = new JLabel("0");
@@ -53,19 +51,17 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
     public ProductoPanel(ProductoController controller) {
         this.controller = controller;
         construir();
-        aplicarEstiloTabla();
+        estilizarTabla();
         refrescar();
     }
 
-    // ── Observer ──────────────────────────────────────────────────────────────
     @Override
     public void onInventarioCambiado(String evento, Producto producto) {
-        // Se actualiza la alerta en el hilo de Swing
         SwingUtilities.invokeLater(() -> {
             String msg = switch (evento) {
-                case "CREADO"      -> "✔  Producto \"" + producto.getNombre() + "\" agregado al inventario.";
-                case "ACTUALIZADO" -> "✏  Producto \"" + producto.getNombre() + "\" actualizado.";
-                case "ELIMINADO"   -> "🗑  Producto \"" + producto.getNombre() + "\" eliminado.";
+                case "CREADO"      -> "+ \"" + producto.getNombre() + "\" agregado.";
+                case "ACTUALIZADO" -> "~ \"" + producto.getNombre() + "\" actualizado.";
+                case "ELIMINADO"   -> "- \"" + producto.getNombre() + "\" eliminado.";
                 default            -> "";
             };
             lblAlerta.setText(msg);
@@ -73,149 +69,166 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
         });
     }
 
-    // ── Construcción de la UI ─────────────────────────────────────────────────
     private void construir() {
-        setLayout(new BorderLayout(0, 16));
+        setLayout(new BorderLayout());
         setBackground(Tema.FONDO);
-        setBorder(BorderFactory.createEmptyBorder(24, 26, 24, 26));
 
-        add(panelEncabezado(), BorderLayout.NORTH);
+        JPanel interior = new JPanel();
+        interior.setLayout(new BoxLayout(interior, BoxLayout.Y_AXIS));
+        interior.setBackground(Tema.FONDO);
+        interior.setBorder(BorderFactory.createEmptyBorder(20, 24, 24, 24));
 
-        JPanel centro = new JPanel(new BorderLayout(0, 16));
-        centro.setOpaque(false);
-        centro.add(panelFormulario(), BorderLayout.NORTH);
-        centro.add(panelInventario(), BorderLayout.CENTER);
-        add(centro, BorderLayout.CENTER);
+        interior.add(panelTitulo());
+        interior.add(Box.createVerticalStrut(14));
+        interior.add(panelStats());
+        interior.add(Box.createVerticalStrut(14));
+        interior.add(panelFormulario());
+        interior.add(Box.createVerticalStrut(14));
+        interior.add(panelTabla());
+
+        JScrollPane scroll = new JScrollPane(interior);
+        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getViewport().setBackground(Tema.FONDO);
+
+        add(scroll, BorderLayout.CENTER);
     }
 
-    private JPanel panelEncabezado() {
-        JPanel p = new JPanel(new BorderLayout(0, 14));
+    private JPanel panelTitulo() {
+        JPanel p = new JPanel(new GridLayout(2, 1, 0, 4));
         p.setOpaque(false);
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+        p.add(UIFactory.titulo("Gestión de Productos"));
+        p.add(UIFactory.subtitulo("Registra, consulta y controla el inventario del minimercado."));
+        return p;
+    }
 
-        // Título
-        JPanel titulos = new JPanel(new GridLayout(2, 1, 0, 3));
-        titulos.setOpaque(false);
-        titulos.add(UIFactory.titulo("Gestión de Productos"));
-        titulos.add(UIFactory.subtitulo("Registra, consulta y controla el inventario del minimercado."));
-        p.add(titulos, BorderLayout.NORTH);
-
-        // Tarjetas de estadísticas
-        JPanel stats = new JPanel(new GridLayout(1, 4, 12, 0));
-        stats.setOpaque(false);
-        stats.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-        stats.add(UIFactory.tarjetaStat("Total productos",    lblTotal,    Tema.ACENTO));
-        stats.add(UIFactory.tarjetaStat("Stock bajo",        lblBajos,    Tema.NARANJA));
-        stats.add(UIFactory.tarjetaStat("Agotados",          lblAgotados, Tema.ROJO));
-        stats.add(UIFactory.tarjetaStat("Próximos a vencer", lblVencen,   Tema.MORADO));
-        p.add(stats, BorderLayout.CENTER);
-
+    private JPanel panelStats() {
+        JPanel p = new JPanel(new GridLayout(1, 4, 10, 0));
+        p.setOpaque(false);
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        p.add(UIFactory.tarjetaStat("Total productos",   lblTotal,    Tema.ACENTO));
+        p.add(UIFactory.tarjetaStat("Stock bajo",        lblBajos,    Tema.NARANJA));
+        p.add(UIFactory.tarjetaStat("Agotados",          lblAgotados, Tema.ROJO));
+        p.add(UIFactory.tarjetaStat("Vencidos",          lblVencen,   new Color(120, 40, 40)));
         return p;
     }
 
     private JPanel panelFormulario() {
-        JPanel p = UIFactory.tarjeta();
-        p.setLayout(new BorderLayout(0, 14));
+        JPanel p = new JPanel(new BorderLayout(0, 14));
+        p.setBackground(Color.WHITE);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Tema.BORDE, 1),
+                BorderFactory.createEmptyBorder(18, 20, 18, 20)));
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-        header.add(UIFactory.sectionTitle("Datos del producto"), BorderLayout.WEST);
-        header.add(lblAlerta, BorderLayout.EAST);
+        JPanel fHead = new JPanel(new BorderLayout());
+        fHead.setBackground(Color.WHITE);
+        fHead.add(UIFactory.sectionTitle("Datos del producto"), BorderLayout.WEST);
         lblAlerta.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        p.add(header, BorderLayout.NORTH);
+        fHead.add(lblAlerta, BorderLayout.EAST);
+        p.add(fHead, BorderLayout.NORTH);
 
-        // Campos
         fCategoria.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        fCategoria.setBackground(Color.WHITE);
 
         JPanel campos = new JPanel(new GridBagLayout());
-        campos.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill    = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1;
-        gbc.insets  = new Insets(4, 0, 10, 14);
+        campos.setBackground(Color.WHITE);
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill    = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        c.insets  = new Insets(4, 0, 10, 14);
 
-        agregarCampo(campos, gbc, 0, 0, "ID",             fId);
-        agregarCampo(campos, gbc, 1, 0, "Nombre",         fNombre);
-        agregarCampo(campos, gbc, 2, 0, "Categoría",      fCategoria);
-        agregarCampo(campos, gbc, 0, 1, "Precio Compra",  fCompra);
-        agregarCampo(campos, gbc, 1, 1, "Precio Venta",   fVenta);
-        agregarCampo(campos, gbc, 2, 1, "Descripción",    fDescripcion);
-        agregarCampo(campos, gbc, 0, 2, "Stock",          fStock);
-        agregarCampo(campos, gbc, 1, 2, "Stock Mínimo",   fMinimo);
-        agregarCampo(campos, gbc, 2, 2, "Lote",           fLote);
-        agregarCampo(campos, gbc, 0, 3, "Vencimiento (AAAA-MM-DD)", fVencimiento);
+        campo(campos, c, 0, 0, "ID",                       fId);
+        campo(campos, c, 1, 0, "Nombre",                   fNombre);
+        campo(campos, c, 2, 0, "Categoría",                fCategoria);
+        campo(campos, c, 0, 1, "Precio Compra ($)",        fCompra);
+        campo(campos, c, 1, 1, "Precio Venta ($)",         fVenta);
+        campo(campos, c, 2, 1, "Descripción",              fDescripcion);
+        campo(campos, c, 0, 2, "Stock",                    fStock);
+        campo(campos, c, 1, 2, "Lote",                     fLote);
+        campo(campos, c, 2, 2, "Vencimiento (AAAA-MM-DD)", fVencimiento);
 
         p.add(campos, BorderLayout.CENTER);
 
-        // Botones
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        botones.setOpaque(false);
-        JButton btnLimpiar    = UIFactory.boton("Limpiar",     Tema.BTN_LIMPIAR);
-        JButton btnEliminar   = UIFactory.boton("Eliminar",    Tema.BTN_ELIMINAR);
-        JButton btnActualizar = UIFactory.boton("Actualizar",  Tema.BTN_ACTUALIZAR);
-        JButton btnAgregar    = UIFactory.boton("+ Agregar",   Tema.BTN_AGREGAR);
+        botones.setBackground(Color.WHITE);
+        JButton btnLimpiar    = UIFactory.boton("Limpiar",    Tema.BTN_LIMPIAR);
+        JButton btnEliminar   = UIFactory.boton("Eliminar",   Tema.BTN_ELIMINAR);
+        JButton btnActualizar = UIFactory.boton("Actualizar", Tema.BTN_ACTUALIZAR);
+        JButton btnAgregar    = UIFactory.boton("+ Agregar",  Tema.BTN_AGREGAR);
         botones.add(btnLimpiar);
         botones.add(btnEliminar);
         botones.add(btnActualizar);
         botones.add(btnAgregar);
         p.add(botones, BorderLayout.SOUTH);
 
-        // Acciones
-        btnAgregar.addActionListener(e    -> ejecutar(() -> controller.agregar(leerProducto())));
-        btnActualizar.addActionListener(e -> ejecutar(() -> controller.actualizar(leerProducto())));
-        btnEliminar.addActionListener(e   -> confirmarEliminar());
         btnLimpiar.addActionListener(e    -> limpiar());
+        btnEliminar.addActionListener(e   -> confirmarEliminar());
+        btnActualizar.addActionListener(e -> ejecutar(() -> controller.actualizar(leer())));
+        btnAgregar.addActionListener(e    -> ejecutar(() -> controller.agregar(leer())));
 
         return p;
     }
 
-    private JPanel panelInventario() {
-        JPanel p = UIFactory.tarjeta();
-        p.setLayout(new BorderLayout(0, 12));
+    private JPanel panelTabla() {
+        JPanel p = new JPanel(new BorderLayout(0, 10));
+        p.setBackground(Color.WHITE);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Tema.BORDE, 1),
+                BorderFactory.createEmptyBorder(18, 20, 18, 20)));
+
+        int altura = 36 + (32 * 7) + 36;
+        p.setPreferredSize(new Dimension(100, altura));
+        p.setMinimumSize(new Dimension(100, altura));
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, altura));
+
         p.add(UIFactory.sectionTitle("Inventario registrado"), BorderLayout.NORTH);
 
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setBorder(BorderFactory.createLineBorder(Tema.BORDE));
         scroll.getViewport().setBackground(Color.WHITE);
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         p.add(scroll, BorderLayout.CENTER);
         return p;
     }
 
-    private void aplicarEstiloTabla() {
-        tabla.setRowHeight(30);
+    private void estilizarTabla() {
+        tabla.setRowHeight(32);
         tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabla.setForeground(Tema.TEXTO_PRIMARIO);
         tabla.setBackground(Color.WHITE);
-        tabla.setGridColor(new Color(235, 238, 245));
+        tabla.setGridColor(new Color(235, 240, 248));
         tabla.setShowHorizontalLines(true);
         tabla.setShowVerticalLines(false);
-        tabla.setSelectionBackground(new Color(219, 234, 255));
+        tabla.setSelectionBackground(new Color(210, 228, 255));
         tabla.setSelectionForeground(Tema.TEXTO_PRIMARIO);
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabla.getTableHeader().setReorderingAllowed(false);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        tabla.getTableHeader().setBackground(new Color(235, 240, 250));
-        tabla.getTableHeader().setForeground(Tema.TEXTO_PRIMARIO);
-        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Tema.BORDE));
+        tabla.setIntercellSpacing(new Dimension(0, 1));
+        tabla.setFillsViewportHeight(true);
 
-        // Renderizador columna Estado
+        JTableHeader th = tabla.getTableHeader();
+        th.setReorderingAllowed(false);
+        th.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        th.setBackground(new Color(234, 240, 252));
+        th.setForeground(new Color(40, 55, 90));
+        th.setPreferredSize(new Dimension(0, 36));
+
         tabla.getColumnModel().getColumn(7).setCellRenderer(new EstadoRenderer());
 
-        // Clic en fila → cargar en formulario
         tabla.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tabla.getSelectedRow() >= 0) cargarDesdeTabla();
+            if (!e.getValueIsAdjusting() && tabla.getSelectedRow() >= 0)
+                cargarDesdeTabla();
         });
     }
 
-    // ── Helpers de formulario ─────────────────────────────────────────────────
-    private void agregarCampo(JPanel p, GridBagConstraints gbc,
-                               int col, int fila, String label, JComponent campo) {
-        gbc.gridx = col;
-        gbc.gridy = fila;
-        p.add(UIFactory.grupoFormulario(label, campo), gbc);
+    private void campo(JPanel p, GridBagConstraints c, int col, int fila,
+                       String label, JComponent campo) {
+        c.gridx = col; c.gridy = fila;
+        p.add(UIFactory.grupoFormulario(label, campo), c);
     }
 
-    private Producto leerProducto() {
+    private Producto leer() {
         try {
             return new Producto(
                     Integer.parseInt(fId.getText().trim()),
@@ -224,7 +237,6 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
                     Double.parseDouble(fCompra.getText().trim()),
                     Double.parseDouble(fVenta.getText().trim()),
                     Integer.parseInt(fStock.getText().trim()),
-                    Integer.parseInt(fMinimo.getText().trim()),
                     fLote.getText(),
                     fVencimiento.getText().isBlank() ? null : LocalDate.parse(fVencimiento.getText().trim()),
                     (Categoria) fCategoria.getSelectedItem());
@@ -244,7 +256,6 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
         fCompra.setText("" + p.getPrecioCompra());
         fVenta.setText("" + p.getPrecioVenta());
         fStock.setText("" + p.getStock());
-        fMinimo.setText("" + p.getStockMinimo());
         fLote.setText(p.getLote());
         fVencimiento.setText(p.getFechaVencimiento() == null ? "" : p.getFechaVencimiento().toString());
         fCategoria.setSelectedItem(p.getCategoria());
@@ -262,23 +273,24 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
 
     private void confirmarEliminar() {
         if (tabla.getSelectedRow() < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un producto en la tabla.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Seleccione un producto en la tabla primero.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int confirm = JOptionPane.showConfirmDialog(this,
-                "¿Eliminar este producto del inventario?", "Confirmar eliminación",
+        int op = JOptionPane.showConfirmDialog(this,
+                "¿Eliminar este producto?", "Confirmar",
                 JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (op == JOptionPane.YES_OPTION)
             ejecutar(() -> controller.eliminar(Integer.parseInt(fId.getText().trim())));
-        }
     }
 
     private void limpiar() {
         for (JTextField f : new JTextField[]{fId, fNombre, fDescripcion, fCompra,
-                fVenta, fStock, fMinimo, fLote, fVencimiento})
+                fVenta, fStock, fLote, fVencimiento})
             f.setText("");
         fCategoria.setSelectedIndex(0);
         tabla.clearSelection();
+        lblAlerta.setText(" ");
         fNombre.requestFocus();
     }
 
@@ -291,7 +303,7 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
                     "$ " + String.format("%,.0f", p.getPrecioVenta()),
                     p.getStock(),
                     p.getLote(),
-                    p.getFechaVencimiento(),
+                    p.getFechaVencimiento() == null ? "—" : p.getFechaVencimiento().toString(),
                     p.getCategoria(),
                     estadoTexto(p)
             });
@@ -299,36 +311,35 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
         lblTotal.setText("" + controller.listar().size());
         lblBajos.setText("" + controller.stockBajo().size());
         lblAgotados.setText("" + controller.agotados().size());
-        lblVencen.setText("" + controller.proximosAVencer().size());
+        lblVencen.setText("" + controller.vencidos().size());
     }
 
     private String estadoTexto(Producto p) {
-        if (p.estaAgotado())          return "AGOTADO";
-        if (p.tieneStockBajo())       return "STOCK BAJO";
-        if (p.estaProximoAVencer())   return "PRÓXIMO A VENCER";
+        if (p.estaAgotado())        return "AGOTADO";
+        if (p.estaVencido())        return "VENCIDO";
+        if (p.tieneStockBajo())     return "STOCK BAJO";
+        if (p.estaProximoAVencer()) return "POR VENCER";
         return "DISPONIBLE";
     }
 
-    // ── Renderer columna Estado ───────────────────────────────────────────────
     private static class EstadoRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(
-                JTable t, Object value, boolean sel, boolean foc, int row, int col) {
-            super.getTableCellRendererComponent(t, value, sel, foc, row, col);
-            setHorizontalAlignment(SwingConstants.CENTER);
-            String txt = String.valueOf(value);
+                JTable t, Object v, boolean sel, boolean foc, int row, int col) {
+            JLabel l = (JLabel) super.getTableCellRendererComponent(t, v, sel, foc, row, col);
+            l.setHorizontalAlignment(SwingConstants.CENTER);
+            l.setFont(new Font("Segoe UI", Font.BOLD, 11));
             if (!sel) {
-                switch (txt) {
-                    case "DISPONIBLE"      -> { setForeground(Tema.VERDE);   setBackground(Tema.VERDE_FONDO); }
-                    case "AGOTADO"         -> { setForeground(Tema.ROJO);    setBackground(Tema.ROJO_FONDO); }
-                    case "STOCK BAJO"      -> { setForeground(Tema.NARANJA); setBackground(Tema.NARANJA_FONDO); }
-                    case "PRÓXIMO A VENCER"-> { setForeground(Tema.MORADO);  setBackground(new Color(238, 230, 255)); }
-                    default                -> { setForeground(Tema.TEXTO_PRIMARIO); setBackground(Color.WHITE); }
+                switch (String.valueOf(v)) {
+                    case "DISPONIBLE" -> { l.setForeground(Tema.VERDE);   l.setBackground(Tema.VERDE_FONDO); }
+                    case "AGOTADO"    -> { l.setForeground(Tema.ROJO);    l.setBackground(Tema.ROJO_FONDO); }
+                    case "VENCIDO"    -> { l.setForeground(new Color(120, 40, 40)); l.setBackground(new Color(255, 210, 210)); }
+                    case "STOCK BAJO" -> { l.setForeground(Tema.NARANJA); l.setBackground(Tema.NARANJA_FONDO); }
+                    case "POR VENCER" -> { l.setForeground(Tema.MORADO);  l.setBackground(new Color(238, 230, 255)); }
+                    default           -> { l.setForeground(Tema.TEXTO_PRIMARIO); l.setBackground(Color.WHITE); }
                 }
             }
-            setFont(new Font("Segoe UI", Font.BOLD, 11));
-            setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-            return this;
+            return l;
         }
     }
 }

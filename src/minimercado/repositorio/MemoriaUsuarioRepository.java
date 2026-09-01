@@ -39,8 +39,13 @@ public class MemoriaUsuarioRepository implements UsuarioRepository {
 
     @Override
     public void actualizar(Usuario u) {
-        if (buscarPorId(u.getIdPersona()).isEmpty())
-            throw new IllegalArgumentException("Usuario no encontrado.");
+        for (int i = 0; i < usuarios.size(); i++) {
+            if (usuarios.get(i).getIdPersona() == u.getIdPersona()) {
+                usuarios.set(i, u);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Usuario no encontrado.");
     }
 
     @Override

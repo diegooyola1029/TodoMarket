@@ -24,5 +24,6 @@ public class ProductoController {
     public void           eliminar(int id)     { service.eliminar(id); }
     public List<Producto> stockBajo()          { return service.stockBajo(); }
     public List<Producto> agotados()           { return service.agotados(); }
+    public List<Producto> vencidos()           { return service.vencidos(); }
     public List<Producto> proximosAVencer()    { return service.proximosAVencer(); }
 }

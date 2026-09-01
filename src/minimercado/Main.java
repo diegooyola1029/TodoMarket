@@ -24,8 +24,15 @@ import minimercado.vista.VentanaPrincipal;
 public class Main {
 
     public static void main(String[] args) {
-        try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
-        catch (Exception ignored) {}
+        // Nimbus respeta colores personalizados; el L&F nativo de Windows los ignora
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception ignored) {}
 
         // Inventario observable — patrón Observer
         Inventario inventario = new Inventario();
@@ -57,11 +64,11 @@ public class Main {
         Categoria bebidas = new Categoria(3, "Bebidas");
         Categoria aseo    = new Categoria(4, "Aseo");
 
-        s.crear(new Producto(1, "Arroz",    "Arroz blanco 500g", 2800, 4000, 20, 5,  "L001", LocalDate.now().plusMonths(8),  granos));
-        s.crear(new Producto(2, "Leche",    "Leche entera 1L",   2300, 3500, 15, 5,  "L002", LocalDate.now().plusDays(20),   lacteos));
-        s.crear(new Producto(3, "Gaseosa",  "Gaseosa 2L",        2800, 4500,  8, 10, "L003", LocalDate.now().plusMonths(5),  bebidas));
-        s.crear(new Producto(4, "Jabón",    "Jabón de tocador",  1500, 2500, 30, 8,  "L004", LocalDate.now().plusMonths(12), aseo));
-        s.crear(new Producto(5, "Frijoles", "Frijoles rojos 1kg",3200, 4800,  3, 5,  "L005", LocalDate.now().plusMonths(6),  granos));
+        s.crear(new Producto(1, "Arroz",    "Arroz blanco 500g",  2800, 4000, 20, "L001", LocalDate.now().plusMonths(8),  granos));
+        s.crear(new Producto(2, "Leche",    "Leche entera 1L",    2300, 3500, 15, "L002", LocalDate.now().plusDays(20),   lacteos));
+        s.crear(new Producto(3, "Gaseosa",  "Gaseosa 2L",         2800, 4500,  8, "L003", LocalDate.now().plusMonths(5),  bebidas));
+        s.crear(new Producto(4, "Jabon",    "Jabon de tocador",   1500, 2500, 30, "L004", LocalDate.now().plusMonths(12), aseo));
+        s.crear(new Producto(5, "Frijoles", "Frijoles rojos 1kg", 3200, 4800,  3, "L005", LocalDate.now().plusMonths(6),  granos));
     }
 
     private static void cargarUsuarios(UsuarioService s) {

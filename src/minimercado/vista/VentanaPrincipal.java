@@ -110,8 +110,8 @@ public class VentanaPrincipal extends JFrame {
         sidebar.add(Box.createVerticalStrut(14));
         sidebar.add(seccionLabel("MÓDULOS"));
 
-        sidebar.add(navBtn("📦  Productos", "productos"));
-        sidebar.add(navBtn("👥  Usuarios",  "usuarios"));
+        sidebar.add(navBtn("Productos", "productos"));
+        sidebar.add(navBtn("Usuarios",  "usuarios"));
 
         sidebar.add(Box.createVerticalGlue());
 
