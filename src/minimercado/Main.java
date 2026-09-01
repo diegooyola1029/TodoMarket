@@ -72,8 +72,8 @@ public class Main {
     }
 
     private static void cargarUsuarios(UsuarioService s) {
-        s.crear(new Administrador(1, "admin",   "admin123", "1000001", "3001111001", "admin@todo.com",   1, "Gerente"));
-        s.crear(new Empleado    (2, "cajero1",  "caj123",   "1000002", "3001111002", "cajero@todo.com",  2, "Cajero"));
-        s.crear(new Cliente     (3, "cliente1", "cli123",   "1000003", "3001111003", "cliente@todo.com", 3));
+        s.crear(new Administrador(1, "admin",   "admin123", "1000001", "3001111001", "admin@gmail.com",   1, "Gerente"));
+        s.crear(new Empleado    (2, "cajero",   "caj123",   "1000002", "3001111002", "cajero@gmail.com",  2, "Cajero"));
+        s.crear(new Cliente     (3, "cliente",  "cli123",   "1000003", "3001111003", "cliente@hotmail.com", 3));
     }
 }

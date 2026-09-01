@@ -23,6 +23,9 @@ public class ProductoService {
     public void crear(Producto p) {
         if (repository.buscarPorId(p.getIdProducto()).isPresent())
             throw new IllegalArgumentException("Ya existe un producto con ese ID.");
+        if (nombreProductoExiste(p.getNombre(), -1))
+            throw new IllegalArgumentException(
+                    "Ya existe un producto llamado \"" + p.getNombre() + "\". Usa Actualizar para modificarlo.");
         repository.guardar(p);
         inventario.notificar("CREADO", p);
     }
@@ -36,8 +39,17 @@ public class ProductoService {
 
     public void actualizar(Producto datos) {
         buscar(datos.getIdProducto()); // valida que exista
-        repository.actualizar(datos);  // reemplaza el objeto completo
+        if (nombreProductoExiste(datos.getNombre(), datos.getIdProducto()))
+            throw new IllegalArgumentException(
+                    "Ya existe otro producto llamado \"" + datos.getNombre() + "\".");
+        repository.actualizar(datos);
         inventario.notificar("ACTUALIZADO", datos);
+    }
+
+    private boolean nombreProductoExiste(String nombre, int excludeId) {
+        return repository.listar().stream()
+                .anyMatch(p -> p.getNombre().equalsIgnoreCase(nombre)
+                        && p.getIdProducto() != excludeId);
     }
 
     public void eliminar(int id) {
