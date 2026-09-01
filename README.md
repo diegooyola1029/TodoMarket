@@ -1,32 +1,94 @@
-# Sistema de Gestión para un Minimercado
+# TodoMarket — Sistema de Gestión
 
-Aplicación universitaria de escritorio para administrar el inventario de un único minimercado. Su objetivo es demostrar POO, CRUD, MVC, SOLID, Repository y Strategy sin base de datos ni frameworks.
+Aplicación de escritorio desarrollada en Java con Swing para gestionar el inventario y los usuarios de un minimercado. Proyecto universitario que demuestra POO, SOLID, MVC, patrones de diseño y CRUD funcional sin base de datos ni frameworks externos.
 
-## Tecnologías y ejecución
+## Diagrama de clases
 
-Java (JDK 17 o superior), Swing, `ArrayList` y `LocalDate`. Desde la raíz del proyecto:
+![Diagrama de clases](data/DIAGRAMA DE CLASES UML.jpeg)
 
-```powershell
-javac -encoding UTF-8 -d out (Get-ChildItem -Recurse -Filter *.java src | ForEach-Object FullName)
+---
+
+## Tecnologías
+
+- Java 17+
+- Swing (Look & Feel: Nimbus)
+- `ArrayList` como almacenamiento en memoria
+- `LocalDate` para manejo de fechas
+
+---
+
+## Cómo ejecutar
+
+Desde la carpeta `TodoMarket`:
+
+```bash
+mkdir out
+javac -encoding UTF-8 -d out -sourcepath src src/minimercado/Main.java
 java -cp out minimercado.Main
 ```
 
-## Arquitectura
+---
 
-- `modelo`: entidades del dominio. `Usuario` es padre de `Administrador`, `Empleado` y `Cliente`.
-- `repositorio`: `ProductoRepository` es la abstracción y `MemoriaProductoRepository` guarda en un `ArrayList`.
-- `servicio`: reglas de negocio, validaciones, alertas y CRUD de productos.
-- `controlador`: coordina la vista con el servicio.
-- `vista`: componentes Swing, sin reglas de negocio.
+## Arquitectura MVC
 
-El CRUD de Productos permite crear, listar, seleccionar, actualizar y eliminar con confirmación. Incluye productos de prueba, detección de agotados, stock bajo y vencimiento dentro de 30 días.
+```
+src/minimercado/
+├── modelo/        → Entidades del dominio y lógica interna
+├── repositorio/   → Contratos e implementaciones de persistencia
+├── servicio/      → Reglas de negocio y validaciones
+├── controlador/   → Intermediario entre vista y servicio
+└── vista/         → Componentes Swing, sin lógica de negocio
+```
 
-## SOLID y patrones
+---
 
-SRP se aprecia en la separación modelo/repositorio/servicio/controlador. DIP: `ProductoService` recibe `ProductoRepository`, no una implementación concreta. LSP: las subclases se pueden usar como `Usuario`. ISP: las interfaces son pequeñas. OCP se demuestra en `MetodoDePago`: para añadir, por ejemplo, PagoNequi, se crea otra implementación sin modificar `Pago`.
+## Módulos implementados (Corte 1)
 
-`PagoEfectivo`, `PagoTarjeta` y `PagoTransferencia` implementan la estrategia `MetodoDePago`. `Factura` compone detalles y un pago; una venta aprobada disminuye stock y no permite superar el disponible. `Compra` compone sus detalles y al registrarse aumenta stock.
+### Usuarios
+CRUD completo de usuarios con tres tipos (herencia de `Usuario`):
+- **Administrador**
+- **Empleado**
+- **Cliente**
 
-## Limitaciones y mejoras
+Validaciones activas en tiempo real:
+- Nombre: solo letras y espacios
+- Documento y teléfono: solo números
+- Correo: debe ser `@gmail.com` o `@hotmail.com`
+- Nombre de usuario único en el sistema
 
-Los datos se pierden al cerrar la aplicación: no hay base de datos, autenticación ni facturación electrónica. Posibles mejoras: persistencia, proveedores, autenticación, sucursales y reportes avanzados.
+### Productos
+CRUD completo del inventario con detección automática de estados:
+
+| Estado | Condición |
+|---|---|
+| DISPONIBLE | Stock > 5 y no vencido |
+| STOCK BAJO | Entre 1 y 5 unidades |
+| AGOTADO | Stock = 0 |
+| POR VENCER | Vence en los próximos 30 días |
+| VENCIDO | Fecha de vencimiento anterior a hoy |
+
+---
+
+## Principios SOLID aplicados
+
+- **SRP** — cada capa tiene una única responsabilidad
+- **OCP** — `UIFactory` y los repositorios son extensibles sin modificar lo existente
+- **LSP** — `Administrador`, `Empleado` y `Cliente` se usan como `Usuario` sin romper nada
+- **ISP** — interfaces pequeñas: `ProductoRepository`, `UsuarioRepository`, `InventarioObserver`
+- **DIP** — los servicios dependen de abstracciones, no de implementaciones concretas
+
+---
+
+## Patrones de diseño
+
+| Patrón | Dónde se aplica |
+|---|---|
+| **Singleton** | `MemoriaProductoRepository` y `MemoriaUsuarioRepository` — una sola instancia del almacén durante toda la ejecución |
+| **Observer** | `Inventario` notifica a `ProductoPanel` cada vez que se crea, actualiza o elimina un producto |
+| **Adapter** | `ProductoRepository` y `UsuarioRepository` actúan como adaptadores entre la lógica de negocio y el almacenamiento, permitiendo cambiar de `ArrayList` a base de datos sin tocar los servicios |
+
+---
+
+## Notas
+
+Los datos no persisten al cerrar la aplicación. Se cargan registros de demostración automáticamente al iniciar para facilitar las pruebas del CRUD.
