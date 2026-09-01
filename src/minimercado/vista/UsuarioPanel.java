@@ -19,20 +19,27 @@ public class UsuarioPanel extends JPanel {
 
     private final UsuarioController controller;
 
+    // Campos de texto normales
     private final JTextField fId        = UIFactory.campoTexto();
     private final JTextField fNombre    = UIFactory.campoTexto();
-    private final JTextField fClave     = UIFactory.campoTexto();
     private final JTextField fDocumento = UIFactory.campoTexto();
     private final JTextField fTelefono  = UIFactory.campoTexto();
     private final JTextField fCorreo    = UIFactory.campoTexto();
+
+    // Campo de contraseña con ojo
+    private final JPasswordField fClave      = UIFactory.campoClave();
+    private final JPanel         panelClave  = UIFactory.panelClave(fClave);
+
     private final JComboBox<String> fRol = new JComboBox<>(
             new String[]{"Administrador", "Empleado", "Cliente"});
 
+    // Stats
     private final JLabel lblTotal   = new JLabel("0");
     private final JLabel lblAdmins  = new JLabel("0");
     private final JLabel lblEmps    = new JLabel("0");
     private final JLabel lblClients = new JLabel("0");
 
+    // Tabla
     private final DefaultTableModel modeloTabla = new DefaultTableModel(
             new String[]{"ID", "Usuario", "Documento", "Teléfono", "Correo", "Rol", "Creación"}, 0) {
         public boolean isCellEditable(int r, int c) { return false; }
@@ -106,14 +113,14 @@ public class UsuarioPanel extends JPanel {
         JPanel campos = new JPanel(new GridBagLayout());
         campos.setBackground(Color.WHITE);
         GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
+        c.fill    = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
-        c.insets = new Insets(4, 0, 10, 14);
+        c.insets  = new Insets(4, 0, 10, 14);
 
         campo(campos, c, 0, 0, "ID",                         fId);
         campo(campos, c, 1, 0, "Nombre de usuario",          fNombre);
         campo(campos, c, 2, 0, "Tipo de usuario",            fRol);
-        campo(campos, c, 0, 1, "Contraseña",                 fClave);
+        campo(campos, c, 0, 1, "Contraseña",                 panelClave);   // ← panel con ojo
         campo(campos, c, 1, 1, "Documento (solo números)",   fDocumento);
         campo(campos, c, 2, 1, "Teléfono (solo números)",    fTelefono);
         campo(campos, c, 0, 2, "Correo (@gmail / @hotmail)", fCorreo);
@@ -181,7 +188,6 @@ public class UsuarioPanel extends JPanel {
         });
     }
 
-    // ── Validación en tiempo real (borde rojo + tooltip) ──────────────────────
     private void adjuntarValidaciones() {
         UIFactory.validarCampo(fId, v -> {
             if (v.isBlank()) return null;
@@ -207,19 +213,19 @@ public class UsuarioPanel extends JPanel {
     }
 
     private void campo(JPanel p, GridBagConstraints c, int col, int fila,
-                       String lbl, JComponent campo) {
+                       String lbl, JComponent comp) {
         c.gridx = col; c.gridy = fila;
-        p.add(UIFactory.grupoFormulario(lbl, campo), c);
+        p.add(UIFactory.grupoFormulario(lbl, comp), c);
     }
 
     private Usuario leerUsuario() {
         try {
-            int    id    = Integer.parseInt(fId.getText().trim());
-            String nom   = fNombre.getText().trim();
-            String clave = fClave.getText().trim();
-            String doc   = fDocumento.getText().trim();
-            String tel   = fTelefono.getText().trim();
-            String mail  = fCorreo.getText().trim();
+            int    id   = Integer.parseInt(fId.getText().trim());
+            String nom  = fNombre.getText().trim();
+            String clave= new String(fClave.getPassword()).trim();
+            String doc  = fDocumento.getText().trim();
+            String tel  = fTelefono.getText().trim();
+            String mail = fCorreo.getText().trim();
 
             if (nom.isBlank())
                 throw new IllegalArgumentException("El nombre de usuario es obligatorio.");
@@ -251,9 +257,9 @@ public class UsuarioPanel extends JPanel {
         fDocumento.setText(u.getDocumento());
         fTelefono.setText(u.getTelefono());
         fCorreo.setText(u.getCorreo());
-        if      (u instanceof Administrador a) { fRol.setSelectedItem("Administrador"); }
-        else if (u instanceof Empleado e)      { fRol.setSelectedItem("Empleado"); }
-        else                                   { fRol.setSelectedItem("Cliente"); }
+        if      (u instanceof Administrador) { fRol.setSelectedItem("Administrador"); }
+        else if (u instanceof Empleado)      { fRol.setSelectedItem("Empleado"); }
+        else                                 { fRol.setSelectedItem("Cliente"); }
     }
 
     private void ejecutar(Runnable accion) {
@@ -278,10 +284,11 @@ public class UsuarioPanel extends JPanel {
     }
 
     private void limpiar() {
-        for (JTextField f : new JTextField[]{fId, fNombre, fClave, fDocumento, fTelefono, fCorreo}) {
+        for (JTextField f : new JTextField[]{fId, fNombre, fDocumento, fTelefono, fCorreo}) {
             f.setText("");
             UIFactory.resetCampo(f);
         }
+        fClave.setText("");
         fRol.setSelectedIndex(0);
         tabla.clearSelection();
         fNombre.requestFocus();

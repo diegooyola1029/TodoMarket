@@ -27,7 +27,7 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
     private final JTextField fVenta       = UIFactory.campoTexto();
     private final JTextField fStock       = UIFactory.campoTexto();
     private final JTextField fLote        = UIFactory.campoTexto();
-    private final JTextField fVencimiento = UIFactory.campoTexto();
+    private final JTextField fVencimiento = UIFactory.campoFecha(); // ← calendario popup
     private final JComboBox<Categoria> fCategoria = new JComboBox<>(new Categoria[]{
             new Categoria(1, "Granos"),  new Categoria(2, "Lácteos"),
             new Categoria(3, "Bebidas"), new Categoria(4, "Aseo"),
@@ -148,7 +148,7 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
         campo(campos, c, 2, 1, "Descripción",              fDescripcion);
         campo(campos, c, 0, 2, "Stock",                    fStock);
         campo(campos, c, 1, 2, "Lote",                     fLote);
-        campo(campos, c, 2, 2, "Vencimiento (AAAA-MM-DD)", fVencimiento);
+        campo(campos, c, 2, 2, "Fecha de vencimiento",     fVencimiento);
 
         p.add(campos, BorderLayout.CENTER);
 
