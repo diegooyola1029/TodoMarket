@@ -10,38 +10,29 @@ import minimercado.modelo.Cliente;
 import minimercado.modelo.Empleado;
 import minimercado.modelo.Usuario;
 
-/**
- * Vista CRUD de usuarios.
- * Todo el contenido vive dentro de un JScrollPane externo para que
- * formulario y tabla sean siempre accesibles.
- */
 public class UsuarioPanel extends JPanel {
 
-    private static final Pattern SOLO_NUMEROS = Pattern.compile("^\\d+$");
+    private static final Pattern SOLO_NUMEROS  = Pattern.compile("^\\d+$");
     private static final Pattern CORREO_VALIDO = Pattern.compile(
             "^[\\w.+-]+@(gmail\\.com|hotmail\\.com)$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern SOLO_LETRAS = Pattern.compile("^[\\p{L} ]+$");
+    private static final Pattern SOLO_LETRAS   = Pattern.compile("^[\\p{L} ]+$");
 
     private final UsuarioController controller;
 
-    // ── Campos ────────────────────────────────────────────────────────────────
     private final JTextField fId        = UIFactory.campoTexto();
     private final JTextField fNombre    = UIFactory.campoTexto();
     private final JTextField fClave     = UIFactory.campoTexto();
     private final JTextField fDocumento = UIFactory.campoTexto();
     private final JTextField fTelefono  = UIFactory.campoTexto();
     private final JTextField fCorreo    = UIFactory.campoTexto();
-    private final JTextField fCargo     = UIFactory.campoTexto();
     private final JComboBox<String> fRol = new JComboBox<>(
             new String[]{"Administrador", "Empleado", "Cliente"});
 
-    // ── Stats ─────────────────────────────────────────────────────────────────
     private final JLabel lblTotal   = new JLabel("0");
     private final JLabel lblAdmins  = new JLabel("0");
     private final JLabel lblEmps    = new JLabel("0");
     private final JLabel lblClients = new JLabel("0");
 
-    // ── Tabla ─────────────────────────────────────────────────────────────────
     private final DefaultTableModel modeloTabla = new DefaultTableModel(
             new String[]{"ID", "Usuario", "Documento", "Teléfono", "Correo", "Rol", "Creación"}, 0) {
         public boolean isCellEditable(int r, int c) { return false; }
@@ -52,15 +43,14 @@ public class UsuarioPanel extends JPanel {
         this.controller = controller;
         construir();
         estilizarTabla();
+        adjuntarValidaciones();
         refrescar();
     }
 
-    // ── Layout ────────────────────────────────────────────────────────────────
     private void construir() {
         setLayout(new BorderLayout());
         setBackground(Tema.FONDO);
 
-        // Panel interno que contiene todo el contenido
         JPanel interior = new JPanel();
         interior.setLayout(new BoxLayout(interior, BoxLayout.Y_AXIS));
         interior.setBackground(Tema.FONDO);
@@ -74,13 +64,11 @@ public class UsuarioPanel extends JPanel {
         interior.add(Box.createVerticalStrut(14));
         interior.add(panelTabla());
 
-        // Scroll externo que lo envuelve todo
         JScrollPane scroll = new JScrollPane(interior);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scroll.getViewport().setBackground(Tema.FONDO);
-
         add(scroll, BorderLayout.CENTER);
     }
 
@@ -104,7 +92,6 @@ public class UsuarioPanel extends JPanel {
         return p;
     }
 
-    // ── Formulario ────────────────────────────────────────────────────────────
     private JPanel panelFormulario() {
         JPanel p = new JPanel(new BorderLayout(0, 14));
         p.setBackground(Color.WHITE);
@@ -112,7 +99,6 @@ public class UsuarioPanel extends JPanel {
                 BorderFactory.createLineBorder(Tema.BORDE, 1),
                 BorderFactory.createEmptyBorder(18, 20, 18, 20)));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
-
         p.add(UIFactory.sectionTitle("Datos del usuario"), BorderLayout.NORTH);
 
         fRol.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -120,19 +106,17 @@ public class UsuarioPanel extends JPanel {
         JPanel campos = new JPanel(new GridBagLayout());
         campos.setBackground(Color.WHITE);
         GridBagConstraints c = new GridBagConstraints();
-        c.fill    = GridBagConstraints.HORIZONTAL;
+        c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
-        c.insets  = new Insets(4, 0, 10, 14);
+        c.insets = new Insets(4, 0, 10, 14);
 
         campo(campos, c, 0, 0, "ID",                         fId);
         campo(campos, c, 1, 0, "Nombre de usuario",          fNombre);
-        campo(campos, c, 2, 0, "Rol",                        fRol);
+        campo(campos, c, 2, 0, "Tipo de usuario",            fRol);
         campo(campos, c, 0, 1, "Contraseña",                 fClave);
         campo(campos, c, 1, 1, "Documento (solo números)",   fDocumento);
         campo(campos, c, 2, 1, "Teléfono (solo números)",    fTelefono);
         campo(campos, c, 0, 2, "Correo (@gmail / @hotmail)", fCorreo);
-        campo(campos, c, 1, 2, "Cargo (Admin / Empleado)",   fCargo);
-
         p.add(campos, BorderLayout.CENTER);
 
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -151,26 +135,20 @@ public class UsuarioPanel extends JPanel {
         btnEliminar.addActionListener(e   -> confirmarEliminar());
         btnActualizar.addActionListener(e -> ejecutar(() -> controller.actualizar(leerUsuario())));
         btnAgregar.addActionListener(e    -> ejecutar(() -> controller.agregar(leerUsuario())));
-
         return p;
     }
 
-    // ── Tabla ─────────────────────────────────────────────────────────────────
     private JPanel panelTabla() {
         JPanel p = new JPanel(new BorderLayout(0, 10));
         p.setBackground(Color.WHITE);
         p.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Tema.BORDE, 1),
                 BorderFactory.createEmptyBorder(18, 20, 18, 20)));
-
-        // Altura fija: encabezado + 7 filas
         int altura = 36 + (32 * 7) + 36;
         p.setPreferredSize(new Dimension(100, altura));
         p.setMinimumSize(new Dimension(100, altura));
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, altura));
-
         p.add(UIFactory.sectionTitle("Usuarios registrados"), BorderLayout.NORTH);
-
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setBorder(BorderFactory.createLineBorder(Tema.BORDE));
         scroll.getViewport().setBackground(Color.WHITE);
@@ -191,34 +169,41 @@ public class UsuarioPanel extends JPanel {
         tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tabla.setIntercellSpacing(new Dimension(0, 1));
         tabla.setFillsViewportHeight(true);
-
         JTableHeader th = tabla.getTableHeader();
         th.setReorderingAllowed(false);
         th.setFont(new Font("Segoe UI", Font.BOLD, 12));
         th.setBackground(new Color(234, 240, 252));
         th.setForeground(new Color(40, 55, 90));
         th.setPreferredSize(new Dimension(0, 36));
-
         tabla.getColumnModel().getColumn(5).setCellRenderer(new RolRenderer());
-
         tabla.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tabla.getSelectedRow() >= 0)
-                cargarDesdeTabla();
+            if (!e.getValueIsAdjusting() && tabla.getSelectedRow() >= 0) cargarDesdeTabla();
         });
     }
 
-    // ── Validaciones ──────────────────────────────────────────────────────────
-    private void validar(String nombre, String doc, String tel, String correo) {
-        if (nombre.isBlank())
-            throw new IllegalArgumentException("El nombre de usuario es obligatorio.");
-        if (!SOLO_LETRAS.matcher(nombre).matches())
-            throw new IllegalArgumentException("El nombre solo puede contener letras y espacios.");
-        if (!doc.isBlank() && !SOLO_NUMEROS.matcher(doc).matches())
-            throw new IllegalArgumentException("El documento solo puede contener números.");
-        if (!tel.isBlank() && !SOLO_NUMEROS.matcher(tel).matches())
-            throw new IllegalArgumentException("El teléfono solo puede contener números.");
-        if (!correo.isBlank() && !CORREO_VALIDO.matcher(correo).matches())
-            throw new IllegalArgumentException("El correo debe ser @gmail.com o @hotmail.com.");
+    // ── Validación en tiempo real (borde rojo + tooltip) ──────────────────────
+    private void adjuntarValidaciones() {
+        UIFactory.validarCampo(fId, v -> {
+            if (v.isBlank()) return null;
+            try { Integer.parseInt(v); return null; }
+            catch (NumberFormatException e) { return "El ID debe ser un número entero."; }
+        });
+        UIFactory.validarCampo(fNombre, v -> {
+            if (v.isBlank()) return null;
+            return SOLO_LETRAS.matcher(v).matches() ? null : "Solo letras y espacios, sin números.";
+        });
+        UIFactory.validarCampo(fDocumento, v -> {
+            if (v.isBlank()) return null;
+            return SOLO_NUMEROS.matcher(v).matches() ? null : "Solo se permiten números.";
+        });
+        UIFactory.validarCampo(fTelefono, v -> {
+            if (v.isBlank()) return null;
+            return SOLO_NUMEROS.matcher(v).matches() ? null : "Solo se permiten números.";
+        });
+        UIFactory.validarCampo(fCorreo, v -> {
+            if (v.isBlank()) return null;
+            return CORREO_VALIDO.matcher(v).matches() ? null : "Debe ser @gmail.com o @hotmail.com.";
+        });
     }
 
     private void campo(JPanel p, GridBagConstraints c, int col, int fila,
@@ -235,15 +220,21 @@ public class UsuarioPanel extends JPanel {
             String doc   = fDocumento.getText().trim();
             String tel   = fTelefono.getText().trim();
             String mail  = fCorreo.getText().trim();
-            String cargo = fCargo.getText().trim();
 
-            validar(nom, doc, tel, mail);
+            if (nom.isBlank())
+                throw new IllegalArgumentException("El nombre de usuario es obligatorio.");
+            if (!SOLO_LETRAS.matcher(nom).matches())
+                throw new IllegalArgumentException("El nombre solo puede contener letras y espacios.");
+            if (!doc.isBlank() && !SOLO_NUMEROS.matcher(doc).matches())
+                throw new IllegalArgumentException("El documento solo puede contener números.");
+            if (!tel.isBlank() && !SOLO_NUMEROS.matcher(tel).matches())
+                throw new IllegalArgumentException("El teléfono solo puede contener números.");
+            if (!mail.isBlank() && !CORREO_VALIDO.matcher(mail).matches())
+                throw new IllegalArgumentException("El correo debe ser @gmail.com o @hotmail.com.");
 
             return switch ((String) fRol.getSelectedItem()) {
-                case "Administrador" -> new Administrador(id, nom, clave, doc, tel, mail,
-                        id, cargo.isBlank() ? "Administrador" : cargo);
-                case "Empleado"      -> new Empleado(id, nom, clave, doc, tel, mail,
-                        id, cargo.isBlank() ? "Empleado" : cargo);
+                case "Administrador" -> new Administrador(id, nom, clave, doc, tel, mail, id, "Administrador");
+                case "Empleado"      -> new Empleado(id, nom, clave, doc, tel, mail, id, "Empleado");
                 default              -> new Cliente(id, nom, clave, doc, tel, mail, id);
             };
         } catch (NumberFormatException ex) {
@@ -260,9 +251,9 @@ public class UsuarioPanel extends JPanel {
         fDocumento.setText(u.getDocumento());
         fTelefono.setText(u.getTelefono());
         fCorreo.setText(u.getCorreo());
-        if      (u instanceof Administrador a) { fRol.setSelectedItem("Administrador"); fCargo.setText(a.getCargo()); }
-        else if (u instanceof Empleado e)      { fRol.setSelectedItem("Empleado");      fCargo.setText(e.getCargo()); }
-        else                                   { fRol.setSelectedItem("Cliente");        fCargo.setText(""); }
+        if      (u instanceof Administrador a) { fRol.setSelectedItem("Administrador"); }
+        else if (u instanceof Empleado e)      { fRol.setSelectedItem("Empleado"); }
+        else                                   { fRol.setSelectedItem("Cliente"); }
     }
 
     private void ejecutar(Runnable accion) {
@@ -277,8 +268,7 @@ public class UsuarioPanel extends JPanel {
 
     private void confirmarEliminar() {
         if (tabla.getSelectedRow() < 0) {
-            JOptionPane.showMessageDialog(this,
-                    "Seleccione un usuario en la tabla primero.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un usuario en la tabla primero.", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
         int op = JOptionPane.showConfirmDialog(this, "¿Eliminar este usuario?",
@@ -288,8 +278,10 @@ public class UsuarioPanel extends JPanel {
     }
 
     private void limpiar() {
-        for (JTextField f : new JTextField[]{fId, fNombre, fClave, fDocumento, fTelefono, fCorreo, fCargo})
+        for (JTextField f : new JTextField[]{fId, fNombre, fClave, fDocumento, fTelefono, fCorreo}) {
             f.setText("");
+            UIFactory.resetCampo(f);
+        }
         fRol.setSelectedIndex(0);
         tabla.clearSelection();
         fNombre.requestFocus();
@@ -305,8 +297,7 @@ public class UsuarioPanel extends JPanel {
             else                                 { rol = "Cliente";        clients++; }
             modeloTabla.addRow(new Object[]{
                     u.getIdPersona(), u.getNombreUsuario(), u.getDocumento(),
-                    u.getTelefono(),  u.getCorreo(),        rol,
-                    u.getFechaCreacion()
+                    u.getTelefono(),  u.getCorreo(),        rol, u.getFechaCreacion()
             });
         }
         lblTotal.setText("" + controller.listar().size());

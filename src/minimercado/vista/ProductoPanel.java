@@ -52,6 +52,7 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
         this.controller = controller;
         construir();
         estilizarTabla();
+        adjuntarValidaciones();
         refrescar();
     }
 
@@ -284,10 +285,44 @@ public class ProductoPanel extends JPanel implements InventarioObserver {
             ejecutar(() -> controller.eliminar(Integer.parseInt(fId.getText().trim())));
     }
 
+    // ── Validación en tiempo real ─────────────────────────────────────────────
+    private void adjuntarValidaciones() {
+        UIFactory.validarCampo(fId, v -> {
+            if (v.isBlank()) return null;
+            try { Integer.parseInt(v); return null; }
+            catch (NumberFormatException e) { return "El ID debe ser un número entero."; }
+        });
+        UIFactory.validarCampo(fNombre, v -> {
+            if (v.isBlank()) return null;
+            return v.trim().matches("[\\p{L} ]+") ? null : "Solo letras y espacios.";
+        });
+        UIFactory.validarCampo(fCompra, v -> {
+            if (v.isBlank()) return null;
+            try { double d = Double.parseDouble(v); return d >= 0 ? null : "Debe ser >= 0."; }
+            catch (NumberFormatException e) { return "Debe ser un número (ej: 1500)."; }
+        });
+        UIFactory.validarCampo(fVenta, v -> {
+            if (v.isBlank()) return null;
+            try { double d = Double.parseDouble(v); return d >= 0 ? null : "Debe ser >= 0."; }
+            catch (NumberFormatException e) { return "Debe ser un número (ej: 2000)."; }
+        });
+        UIFactory.validarCampo(fStock, v -> {
+            if (v.isBlank()) return null;
+            try { int i = Integer.parseInt(v); return i >= 0 ? null : "Debe ser >= 0."; }
+            catch (NumberFormatException e) { return "Debe ser un número entero (ej: 10)."; }
+        });
+        UIFactory.validarCampo(fVencimiento, v -> {
+            if (v.isBlank()) return null;
+            return v.matches("\\d{4}-\\d{2}-\\d{2}") ? null : "Formato: AAAA-MM-DD (ej: 2026-12-31).";
+        });
+    }
+
     private void limpiar() {
         for (JTextField f : new JTextField[]{fId, fNombre, fDescripcion, fCompra,
-                fVenta, fStock, fLote, fVencimiento})
+                fVenta, fStock, fLote, fVencimiento}) {
             f.setText("");
+            UIFactory.resetCampo(f);
+        }
         fCategoria.setSelectedIndex(0);
         tabla.clearSelection();
         lblAlerta.setText(" ");

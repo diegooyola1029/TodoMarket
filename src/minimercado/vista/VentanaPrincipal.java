@@ -49,8 +49,8 @@ public class VentanaPrincipal extends JFrame {
         // Contenido central con CardLayout
         JPanel contenido = new JPanel(new CardLayout());
         contenido.setBackground(Tema.FONDO);
-        contenido.add(productosPanel, "productos");
         contenido.add(usuariosPanel,  "usuarios");
+        contenido.add(productosPanel, "productos");
 
         CardLayout cl = (CardLayout) contenido.getLayout();
 
@@ -110,8 +110,8 @@ public class VentanaPrincipal extends JFrame {
         sidebar.add(Box.createVerticalStrut(14));
         sidebar.add(seccionLabel("MÓDULOS"));
 
-        sidebar.add(navBtn("Productos", "productos"));
         sidebar.add(navBtn("Usuarios",  "usuarios"));
+        sidebar.add(navBtn("Productos", "productos"));
 
         sidebar.add(Box.createVerticalGlue());
 

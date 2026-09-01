@@ -3,20 +3,27 @@ package minimercado.vista;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.function.Function;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 /**
  * Fábrica de componentes Swing reutilizables.
  * OCP: agregar componentes nuevos no modifica los existentes.
- *
- * IMPORTANTE: usa un JPanel pintado a mano para los botones en lugar de
- * JButton nativo, para evitar que el L&F de Windows/Nimbus sobreescriba
- * los colores de fondo y texto.
  */
 public final class UIFactory {
 
     private UIFactory() {}
+
+    // Bordes reutilizables para estados de validación
+    private static final Border BORDE_NORMAL = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(190, 200, 220), 1),
+            BorderFactory.createEmptyBorder(7, 11, 7, 11));
+    private static final Border BORDE_ERROR = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(200, 50, 50), 2),
+            BorderFactory.createEmptyBorder(6, 10, 6, 10));
 
     // ── Campos de texto ───────────────────────────────────────────────────────
     public static JTextField campoTexto() {
@@ -25,11 +32,42 @@ public final class UIFactory {
         t.setForeground(Tema.TEXTO_PRIMARIO);
         t.setBackground(Color.WHITE);
         t.setCaretColor(Tema.ACENTO);
-        t.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(190, 200, 220), 1),
-                BorderFactory.createEmptyBorder(7, 11, 7, 11)));
+        t.setBorder(BORDE_NORMAL);
         t.setPreferredSize(new Dimension(0, 36));
         return t;
+    }
+
+    /**
+     * Adjunta validación en tiempo real a un campo.
+     * validator recibe el texto actual y devuelve null si es válido,
+     * o un mensaje de error si no lo es.
+     * El campo muestra borde rojo + tooltip con el mensaje automáticamente.
+     */
+    public static void validarCampo(JTextField campo, Function<String, String> validator) {
+        Runnable check = () -> {
+            String error = validator.apply(campo.getText());
+            if (error != null) {
+                campo.setBorder(BORDE_ERROR);
+                campo.setToolTipText(error);
+                campo.setBackground(new Color(255, 245, 245));
+            } else {
+                campo.setBorder(BORDE_NORMAL);
+                campo.setToolTipText(null);
+                campo.setBackground(Color.WHITE);
+            }
+        };
+        campo.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e)  { check.run(); }
+            public void removeUpdate(DocumentEvent e)  { check.run(); }
+            public void changedUpdate(DocumentEvent e) { check.run(); }
+        });
+    }
+
+    /** Resetea el campo al estado visual normal (borde gris, fondo blanco). */
+    public static void resetCampo(JTextField campo) {
+        campo.setBorder(BORDE_NORMAL);
+        campo.setBackground(Color.WHITE);
+        campo.setToolTipText(null);
     }
 
     // ── Etiquetas ─────────────────────────────────────────────────────────────
