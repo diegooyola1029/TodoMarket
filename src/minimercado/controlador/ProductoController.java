@@ -1,4 +1,28 @@
 package minimercado.controlador;
-import java.util.List; import minimercado.modelo.Producto; import minimercado.servicio.ProductoService;
-/** Controlador MVC de productos: la vista lo usa sin conocer el repositorio. */
-public class ProductoController { private final ProductoService service; public ProductoController(ProductoService service){this.service=service;} public void agregar(Producto p){service.crear(p);} public List<Producto> listar(){return service.listar();} public Producto buscar(int id){return service.buscar(id);} public void actualizar(Producto p){service.actualizar(p);} public void eliminar(int id){service.eliminar(id);} public List<Producto> stockBajo(){return service.stockBajo();} public List<Producto> agotados(){return service.agotados();} public List<Producto> proximosAVencer(){return service.proximosAVencer();} }
+
+import java.util.List;
+import minimercado.modelo.Producto;
+import minimercado.servicio.ProductoService;
+
+/**
+ * Controlador MVC de productos.
+ * Intermediario entre la vista y el servicio; la vista nunca accede
+ * directamente al repositorio.
+ */
+public class ProductoController {
+
+    private final ProductoService service;
+
+    public ProductoController(ProductoService service) {
+        this.service = service;
+    }
+
+    public void           agregar(Producto p)  { service.crear(p); }
+    public List<Producto> listar()             { return service.listar(); }
+    public Producto       buscar(int id)       { return service.buscar(id); }
+    public void           actualizar(Producto p){ service.actualizar(p); }
+    public void           eliminar(int id)     { service.eliminar(id); }
+    public List<Producto> stockBajo()          { return service.stockBajo(); }
+    public List<Producto> agotados()           { return service.agotados(); }
+    public List<Producto> proximosAVencer()    { return service.proximosAVencer(); }
+}

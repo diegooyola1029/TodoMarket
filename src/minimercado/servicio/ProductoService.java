@@ -1,7 +1,62 @@
 package minimercado.servicio;
-import java.util.*; import minimercado.modelo.Producto; import minimercado.repositorio.ProductoRepository;
+
+import java.util.List;
+import minimercado.modelo.Inventario;
+import minimercado.modelo.Producto;
+import minimercado.repositorio.ProductoRepository;
+
 /**
- * Servicio de negocio para productos. Depende del contrato ProductoRepository
- * (DIP), valida IDs únicos y concentra las consultas de alertas.
+ * Servicio de negocio para productos (SRP – Single Responsibility).
+ * Delega la persistencia al repositorio (DIP) y notifica cambios
+ * al Inventario observable (patrón Observer).
  */
-public class ProductoService { private final ProductoRepository repository; public ProductoService(ProductoRepository repository){this.repository=repository;} public void crear(Producto p){if(repository.buscarPorId(p.getIdProducto()).isPresent())throw new IllegalArgumentException("Ya existe un producto con ese ID.");repository.guardar(p);} public List<Producto> listar(){return repository.listar();} public Producto buscar(int id){return repository.buscarPorId(id).orElseThrow(()->new IllegalArgumentException("Producto no encontrado."));} public void actualizar(Producto datos){Producto p=buscar(datos.getIdProducto());p.setNombre(datos.getNombre());p.setDescripcion(datos.getDescripcion());p.setPrecioCompra(datos.getPrecioCompra());p.setPrecioVenta(datos.getPrecioVenta());p.setStock(datos.getStock());p.setStockMinimo(datos.getStockMinimo());p.setLote(datos.getLote());p.setFechaVencimiento(datos.getFechaVencimiento());p.setCategoria(datos.getCategoria());repository.actualizar(p);} public void eliminar(int id){if(!repository.eliminar(id))throw new IllegalArgumentException("Producto no encontrado.");} public List<Producto> stockBajo(){return listar().stream().filter(Producto::tieneStockBajo).toList();} public List<Producto> agotados(){return listar().stream().filter(Producto::estaAgotado).toList();} public List<Producto> proximosAVencer(){return listar().stream().filter(Producto::estaProximoAVencer).toList();} }
+public class ProductoService {
+
+    private final ProductoRepository repository;
+    private final Inventario         inventario;
+
+    public ProductoService(ProductoRepository repository, Inventario inventario) {
+        this.repository = repository;
+        this.inventario = inventario;
+    }
+
+    public void crear(Producto p) {
+        if (repository.buscarPorId(p.getIdProducto()).isPresent())
+            throw new IllegalArgumentException("Ya existe un producto con ese ID.");
+        repository.guardar(p);
+        inventario.notificar("CREADO", p);
+    }
+
+    public List<Producto> listar() { return repository.listar(); }
+
+    public Producto buscar(int id) {
+        return repository.buscarPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado."));
+    }
+
+    public void actualizar(Producto datos) {
+        Producto p = buscar(datos.getIdProducto());
+        p.setNombre(datos.getNombre());
+        p.setDescripcion(datos.getDescripcion());
+        p.setPrecioCompra(datos.getPrecioCompra());
+        p.setPrecioVenta(datos.getPrecioVenta());
+        p.setStock(datos.getStock());
+        p.setStockMinimo(datos.getStockMinimo());
+        p.setLote(datos.getLote());
+        p.setFechaVencimiento(datos.getFechaVencimiento());
+        p.setCategoria(datos.getCategoria());
+        repository.actualizar(p);
+        inventario.notificar("ACTUALIZADO", p);
+    }
+
+    public void eliminar(int id) {
+        Producto p = buscar(id);
+        if (!repository.eliminar(id))
+            throw new IllegalArgumentException("Producto no encontrado.");
+        inventario.notificar("ELIMINADO", p);
+    }
+
+    public List<Producto> stockBajo()        { return listar().stream().filter(Producto::tieneStockBajo).toList(); }
+    public List<Producto> agotados()         { return listar().stream().filter(Producto::estaAgotado).toList(); }
+    public List<Producto> proximosAVencer()  { return listar().stream().filter(Producto::estaProximoAVencer).toList(); }
+}

@@ -7,36 +7,328 @@ import javax.swing.*;
 import javax.swing.table.*;
 import minimercado.controlador.ProductoController;
 import minimercado.modelo.Categoria;
+import minimercado.modelo.InventarioObserver;
 import minimercado.modelo.Producto;
 
 /**
- * Vista Swing del CRUD de productos. Obtiene datos del formulario, los envía al
- * controlador y muestra resultados; no contiene reglas de inventario.
+ * Vista CRUD de productos.
+ * Implementa InventarioObserver (patrón Observer) para recibir alertas
+ * automáticas cuando cambia el inventario.
  */
-public class ProductoPanel extends JPanel {
-    private static final Color AZUL = new Color(31, 78, 121), FONDO = new Color(245, 247, 250);
-    private final ProductoController controller;
-    private final JTextField id=texto(), nombre=texto(), descripcion=texto(), compra=texto(), venta=texto(), stock=texto(), minimo=texto(), lote=texto(), vencimiento=texto();
-    private final JComboBox<Categoria> categoria = new JComboBox<>(new Categoria[]{new Categoria(1,"Granos"),new Categoria(2,"Lácteos"),new Categoria(3,"Bebidas"),new Categoria(4,"Aseo"),new Categoria(5,"Otros")});
-    private final JLabel total=valor(), bajos=valor(), agotados=valor(), vencen=valor();
-    private final DefaultTableModel modelo = new DefaultTableModel(new String[]{"ID","Nombre","Precio venta","Stock","Lote","Vencimiento","Categoría","Estado"},0){public boolean isCellEditable(int r,int c){return false;}};
-    private final JTable tabla = new JTable(modelo);
-    public ProductoPanel(ProductoController controller){this.controller=controller; construir(); refrescar();}
+public class ProductoPanel extends JPanel implements InventarioObserver {
 
-    private void construir(){setLayout(new BorderLayout(0,14));setBackground(FONDO);setBorder(BorderFactory.createEmptyBorder(18,22,18,22));add(encabezado(),BorderLayout.NORTH);JPanel centro=new JPanel(new BorderLayout(0,14));centro.setOpaque(false);centro.add(formulario(),BorderLayout.NORTH);centro.add(inventario(),BorderLayout.CENTER);add(centro,BorderLayout.CENTER);}
-    private JPanel encabezado(){JPanel p=new JPanel(new BorderLayout(0,12));p.setOpaque(false);JLabel titulo=new JLabel("Gestión de productos");titulo.setFont(new Font("Segoe UI",Font.BOLD,24));titulo.setForeground(AZUL);JLabel sub=new JLabel("Registra, consulta y controla el inventario del minimercado");sub.setForeground(new Color(92,101,112));JPanel t=new JPanel(new GridLayout(2,1));t.setOpaque(false);t.add(titulo);t.add(sub);p.add(t,BorderLayout.NORTH);JPanel resumen=new JPanel(new GridLayout(1,4,10,0));resumen.setOpaque(false);resumen.add(tarjeta("Total productos",total,AZUL));resumen.add(tarjeta("Stock bajo",bajos,new Color(185,110,0)));resumen.add(tarjeta("Agotados",agotados,new Color(176,48,48)));resumen.add(tarjeta("Por vencer",vencen,new Color(116,70,165)));p.add(resumen,BorderLayout.CENTER);return p;}
-    private JPanel formulario(){JPanel p=base();p.setLayout(new BorderLayout(0,12));p.add(titulo("Datos del producto"),BorderLayout.NORTH);JPanel campos=new JPanel(new GridBagLayout());campos.setOpaque(false);GridBagConstraints c=new GridBagConstraints();c.insets=new Insets(4,0,8,14);c.fill=GridBagConstraints.HORIZONTAL;c.weightx=1;campo(campos,c,0,0,"ID",id);campo(campos,c,1,0,"Nombre",nombre);campo(campos,c,2,0,"Categoría",categoria);campo(campos,c,0,1,"Precio compra",compra);campo(campos,c,1,1,"Precio venta",venta);campo(campos,c,2,1,"Descripción",descripcion);campo(campos,c,0,2,"Stock",stock);campo(campos,c,1,2,"Stock mínimo",minimo);campo(campos,c,2,2,"Lote",lote);campo(campos,c,0,3,"Vencimiento",vencimiento);JLabel ayuda=new JLabel("Formato: AAAA-MM-DD (opcional)");ayuda.setFont(new Font("Segoe UI",Font.PLAIN,11));ayuda.setForeground(new Color(105,112,120));c.gridx=1;c.gridy=3;c.gridwidth=2;campos.add(ayuda,c);p.add(campos,BorderLayout.CENTER);JPanel botones=new JPanel(new FlowLayout(FlowLayout.RIGHT,8,0));botones.setOpaque(false);JButton agregar=boton("+ Agregar",AZUL),actualizar=boton("Actualizar",new Color(43,126,91)),eliminar=boton("Eliminar",new Color(177,58,58)),limpiar=boton("Limpiar",new Color(105,112,120));botones.add(limpiar);botones.add(eliminar);botones.add(actualizar);botones.add(agregar);p.add(botones,BorderLayout.SOUTH);agregar.addActionListener(e->ejecutar(()->controller.agregar(leer())));actualizar.addActionListener(e->ejecutar(()->controller.actualizar(leer())));eliminar.addActionListener(e->eliminar());limpiar.addActionListener(e->limpiar());return p;}
-    private JPanel inventario(){JPanel p=base();p.setLayout(new BorderLayout(0,10));p.add(titulo("Inventario registrado"),BorderLayout.NORTH);tabla.setRowHeight(27);tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);tabla.setFont(new Font("Segoe UI",Font.PLAIN,13));tabla.setShowHorizontalLines(false);tabla.getTableHeader().setFont(new Font("Segoe UI",Font.BOLD,12));tabla.getTableHeader().setBackground(new Color(229,237,246));tabla.getTableHeader().setForeground(AZUL);tabla.getTableHeader().setReorderingAllowed(false);tabla.getColumnModel().getColumn(7).setCellRenderer(new Estado());tabla.getSelectionModel().addListSelectionListener(e->{if(!e.getValueIsAdjusting()&&tabla.getSelectedRow()>=0)cargar();});JScrollPane scroll=new JScrollPane(tabla);scroll.setBorder(BorderFactory.createLineBorder(new Color(218,223,230)));p.add(scroll,BorderLayout.CENTER);return p;}
-    private JPanel tarjeta(String texto,JLabel numero,Color color){JPanel p=base();p.setLayout(new GridLayout(2,1));JLabel l=new JLabel(texto);l.setFont(new Font("Segoe UI",Font.PLAIN,12));l.setForeground(new Color(94,102,112));numero.setForeground(color);p.add(l);p.add(numero);return p;}
-    private JPanel base(){JPanel p=new JPanel();p.setBackground(Color.WHITE);p.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(220,225,231)),BorderFactory.createEmptyBorder(12,14,12,14)));return p;}
-    private JLabel titulo(String t){JLabel l=new JLabel(t);l.setFont(new Font("Segoe UI",Font.BOLD,15));l.setForeground(AZUL);return l;} private JLabel valor(){JLabel l=new JLabel("0");l.setFont(new Font("Segoe UI",Font.BOLD,21));return l;} private JTextField texto(){JTextField t=new JTextField();t.setFont(new Font("Segoe UI",Font.PLAIN,13));t.setPreferredSize(new Dimension(0,28));return t;} private JButton boton(String t,Color color){JButton b=new JButton(t);b.setForeground(Color.WHITE);b.setBackground(color);b.setFocusPainted(false);b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));b.setBorder(BorderFactory.createEmptyBorder(8,14,8,14));return b;}
-    private void campo(JPanel p,GridBagConstraints c,int x,int y,String etiqueta,JComponent comp){JPanel g=new JPanel(new BorderLayout(0,4));g.setOpaque(false);JLabel l=new JLabel(etiqueta);l.setFont(new Font("Segoe UI",Font.BOLD,12));l.setForeground(new Color(52,61,72));g.add(l,BorderLayout.NORTH);g.add(comp,BorderLayout.CENTER);c.gridx=x;c.gridy=y;p.add(g,c);}
-    private Producto leer(){try{return new Producto(Integer.parseInt(id.getText().trim()),nombre.getText(),descripcion.getText(),Double.parseDouble(compra.getText().trim()),Double.parseDouble(venta.getText().trim()),Integer.parseInt(stock.getText().trim()),Integer.parseInt(minimo.getText().trim()),lote.getText(),vencimiento.getText().isBlank()?null:LocalDate.parse(vencimiento.getText().trim()),(Categoria)categoria.getSelectedItem());}catch(NumberFormatException e){throw new IllegalArgumentException("ID, precios y stock deben ser números válidos.");}catch(DateTimeParseException e){throw new IllegalArgumentException("La fecha debe tener el formato AAAA-MM-DD.");}}
-    private void ejecutar(Accion a){try{a.hacer();refrescar();limpiar();JOptionPane.showMessageDialog(this,"Operación realizada correctamente.","Minimercado",JOptionPane.INFORMATION_MESSAGE);}catch(IllegalArgumentException e){JOptionPane.showMessageDialog(this,e.getMessage(),"Validación",JOptionPane.WARNING_MESSAGE);}}
-    private void eliminar(){if(tabla.getSelectedRow()<0){JOptionPane.showMessageDialog(this,"Seleccione un producto en la tabla.","Minimercado",JOptionPane.WARNING_MESSAGE);return;}if(JOptionPane.showConfirmDialog(this,"¿Está seguro de eliminar este producto?","Confirmar eliminación",JOptionPane.YES_NO_OPTION,JOptionPane.WARNING_MESSAGE)==JOptionPane.YES_OPTION){try{controller.eliminar(Integer.parseInt(id.getText()));refrescar();limpiar();JOptionPane.showMessageDialog(this,"Producto eliminado correctamente.");}catch(IllegalArgumentException e){JOptionPane.showMessageDialog(this,e.getMessage());}}}
-    private void cargar(){Producto p=controller.buscar((int)modelo.getValueAt(tabla.getSelectedRow(),0));id.setText(""+p.getIdProducto());nombre.setText(p.getNombre());descripcion.setText(p.getDescripcion());compra.setText(""+p.getPrecioCompra());venta.setText(""+p.getPrecioVenta());stock.setText(""+p.getStock());minimo.setText(""+p.getStockMinimo());lote.setText(p.getLote());vencimiento.setText(p.getFechaVencimiento()==null?"":p.getFechaVencimiento().toString());categoria.setSelectedItem(p.getCategoria());}
-    /** Recarga tabla y tarjetas; se usa después de cada operación y al volver a la pestaña. */
-    public void refrescar(){modelo.setRowCount(0);for(Producto p:controller.listar())modelo.addRow(new Object[]{p.getIdProducto(),p.getNombre(),"$ "+String.format("%,.0f",p.getPrecioVenta()),p.getStock(),p.getLote(),p.getFechaVencimiento(),p.getCategoria(),alerta(p)});total.setText(""+controller.listar().size());bajos.setText(""+controller.stockBajo().size());agotados.setText(""+controller.agotados().size());vencen.setText(""+controller.proximosAVencer().size());}
-    private String alerta(Producto p){if(p.estaAgotado())return "AGOTADO";if(p.tieneStockBajo())return "STOCK BAJO";if(p.estaProximoAVencer())return "PRÓXIMO A VENCER";return "DISPONIBLE";} private void limpiar(){for(JTextField f:new JTextField[]{id,nombre,descripcion,compra,venta,stock,minimo,lote,vencimiento})f.setText("");categoria.setSelectedIndex(0);tabla.clearSelection();nombre.requestFocus();}
-    @FunctionalInterface private interface Accion{void hacer();} private static class Estado extends DefaultTableCellRenderer{public Component getTableCellRendererComponent(JTable t,Object v,boolean s,boolean f,int r,int c){JLabel l=(JLabel)super.getTableCellRendererComponent(t,v,s,f,r,c);l.setHorizontalAlignment(SwingConstants.CENTER);if(!s){String x=String.valueOf(v);l.setForeground(x.equals("DISPONIBLE")?new Color(33,119,76):x.equals("AGOTADO")?new Color(176,48,48):new Color(175,109,0));}return l;}}
+    private final ProductoController controller;
+
+    // ── Campos del formulario ─────────────────────────────────────────────────
+    private final JTextField fId          = UIFactory.campoTexto();
+    private final JTextField fNombre      = UIFactory.campoTexto();
+    private final JTextField fDescripcion = UIFactory.campoTexto();
+    private final JTextField fCompra      = UIFactory.campoTexto();
+    private final JTextField fVenta       = UIFactory.campoTexto();
+    private final JTextField fStock       = UIFactory.campoTexto();
+    private final JTextField fMinimo      = UIFactory.campoTexto();
+    private final JTextField fLote        = UIFactory.campoTexto();
+    private final JTextField fVencimiento = UIFactory.campoTexto();
+
+    private final JComboBox<Categoria> fCategoria = new JComboBox<>(new Categoria[]{
+            new Categoria(1, "Granos"),  new Categoria(2, "Lácteos"),
+            new Categoria(3, "Bebidas"), new Categoria(4, "Aseo"),
+            new Categoria(5, "Otros")
+    });
+
+    // ── Tarjetas de estadísticas ──────────────────────────────────────────────
+    private final JLabel lblTotal    = new JLabel("0");
+    private final JLabel lblBajos    = new JLabel("0");
+    private final JLabel lblAgotados = new JLabel("0");
+    private final JLabel lblVencen   = new JLabel("0");
+    private final JLabel lblAlerta   = new JLabel(" ");
+
+    // ── Tabla ─────────────────────────────────────────────────────────────────
+    private final DefaultTableModel modeloTabla = new DefaultTableModel(
+            new String[]{"ID", "Nombre", "Precio Venta", "Stock", "Lote", "Vencimiento", "Categoría", "Estado"}, 0) {
+        public boolean isCellEditable(int r, int c) { return false; }
+    };
+    private final JTable tabla = new JTable(modeloTabla);
+
+    public ProductoPanel(ProductoController controller) {
+        this.controller = controller;
+        construir();
+        aplicarEstiloTabla();
+        refrescar();
+    }
+
+    // ── Observer ──────────────────────────────────────────────────────────────
+    @Override
+    public void onInventarioCambiado(String evento, Producto producto) {
+        // Se actualiza la alerta en el hilo de Swing
+        SwingUtilities.invokeLater(() -> {
+            String msg = switch (evento) {
+                case "CREADO"      -> "✔  Producto \"" + producto.getNombre() + "\" agregado al inventario.";
+                case "ACTUALIZADO" -> "✏  Producto \"" + producto.getNombre() + "\" actualizado.";
+                case "ELIMINADO"   -> "🗑  Producto \"" + producto.getNombre() + "\" eliminado.";
+                default            -> "";
+            };
+            lblAlerta.setText(msg);
+            lblAlerta.setForeground(Tema.VERDE);
+        });
+    }
+
+    // ── Construcción de la UI ─────────────────────────────────────────────────
+    private void construir() {
+        setLayout(new BorderLayout(0, 16));
+        setBackground(Tema.FONDO);
+        setBorder(BorderFactory.createEmptyBorder(24, 26, 24, 26));
+
+        add(panelEncabezado(), BorderLayout.NORTH);
+
+        JPanel centro = new JPanel(new BorderLayout(0, 16));
+        centro.setOpaque(false);
+        centro.add(panelFormulario(), BorderLayout.NORTH);
+        centro.add(panelInventario(), BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER);
+    }
+
+    private JPanel panelEncabezado() {
+        JPanel p = new JPanel(new BorderLayout(0, 14));
+        p.setOpaque(false);
+
+        // Título
+        JPanel titulos = new JPanel(new GridLayout(2, 1, 0, 3));
+        titulos.setOpaque(false);
+        titulos.add(UIFactory.titulo("Gestión de Productos"));
+        titulos.add(UIFactory.subtitulo("Registra, consulta y controla el inventario del minimercado."));
+        p.add(titulos, BorderLayout.NORTH);
+
+        // Tarjetas de estadísticas
+        JPanel stats = new JPanel(new GridLayout(1, 4, 12, 0));
+        stats.setOpaque(false);
+        stats.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        stats.add(UIFactory.tarjetaStat("Total productos",    lblTotal,    Tema.ACENTO));
+        stats.add(UIFactory.tarjetaStat("Stock bajo",        lblBajos,    Tema.NARANJA));
+        stats.add(UIFactory.tarjetaStat("Agotados",          lblAgotados, Tema.ROJO));
+        stats.add(UIFactory.tarjetaStat("Próximos a vencer", lblVencen,   Tema.MORADO));
+        p.add(stats, BorderLayout.CENTER);
+
+        return p;
+    }
+
+    private JPanel panelFormulario() {
+        JPanel p = UIFactory.tarjeta();
+        p.setLayout(new BorderLayout(0, 14));
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.add(UIFactory.sectionTitle("Datos del producto"), BorderLayout.WEST);
+        header.add(lblAlerta, BorderLayout.EAST);
+        lblAlerta.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        p.add(header, BorderLayout.NORTH);
+
+        // Campos
+        fCategoria.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        fCategoria.setBackground(Color.WHITE);
+
+        JPanel campos = new JPanel(new GridBagLayout());
+        campos.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill    = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        gbc.insets  = new Insets(4, 0, 10, 14);
+
+        agregarCampo(campos, gbc, 0, 0, "ID",             fId);
+        agregarCampo(campos, gbc, 1, 0, "Nombre",         fNombre);
+        agregarCampo(campos, gbc, 2, 0, "Categoría",      fCategoria);
+        agregarCampo(campos, gbc, 0, 1, "Precio Compra",  fCompra);
+        agregarCampo(campos, gbc, 1, 1, "Precio Venta",   fVenta);
+        agregarCampo(campos, gbc, 2, 1, "Descripción",    fDescripcion);
+        agregarCampo(campos, gbc, 0, 2, "Stock",          fStock);
+        agregarCampo(campos, gbc, 1, 2, "Stock Mínimo",   fMinimo);
+        agregarCampo(campos, gbc, 2, 2, "Lote",           fLote);
+        agregarCampo(campos, gbc, 0, 3, "Vencimiento (AAAA-MM-DD)", fVencimiento);
+
+        p.add(campos, BorderLayout.CENTER);
+
+        // Botones
+        JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        botones.setOpaque(false);
+        JButton btnLimpiar    = UIFactory.boton("Limpiar",     Tema.BTN_LIMPIAR);
+        JButton btnEliminar   = UIFactory.boton("Eliminar",    Tema.BTN_ELIMINAR);
+        JButton btnActualizar = UIFactory.boton("Actualizar",  Tema.BTN_ACTUALIZAR);
+        JButton btnAgregar    = UIFactory.boton("+ Agregar",   Tema.BTN_AGREGAR);
+        botones.add(btnLimpiar);
+        botones.add(btnEliminar);
+        botones.add(btnActualizar);
+        botones.add(btnAgregar);
+        p.add(botones, BorderLayout.SOUTH);
+
+        // Acciones
+        btnAgregar.addActionListener(e    -> ejecutar(() -> controller.agregar(leerProducto())));
+        btnActualizar.addActionListener(e -> ejecutar(() -> controller.actualizar(leerProducto())));
+        btnEliminar.addActionListener(e   -> confirmarEliminar());
+        btnLimpiar.addActionListener(e    -> limpiar());
+
+        return p;
+    }
+
+    private JPanel panelInventario() {
+        JPanel p = UIFactory.tarjeta();
+        p.setLayout(new BorderLayout(0, 12));
+        p.add(UIFactory.sectionTitle("Inventario registrado"), BorderLayout.NORTH);
+
+        JScrollPane scroll = new JScrollPane(tabla);
+        scroll.setBorder(BorderFactory.createLineBorder(Tema.BORDE));
+        scroll.getViewport().setBackground(Color.WHITE);
+        p.add(scroll, BorderLayout.CENTER);
+        return p;
+    }
+
+    private void aplicarEstiloTabla() {
+        tabla.setRowHeight(30);
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tabla.setForeground(Tema.TEXTO_PRIMARIO);
+        tabla.setBackground(Color.WHITE);
+        tabla.setGridColor(new Color(235, 238, 245));
+        tabla.setShowHorizontalLines(true);
+        tabla.setShowVerticalLines(false);
+        tabla.setSelectionBackground(new Color(219, 234, 255));
+        tabla.setSelectionForeground(Tema.TEXTO_PRIMARIO);
+        tabla.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabla.getTableHeader().setReorderingAllowed(false);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        tabla.getTableHeader().setBackground(new Color(235, 240, 250));
+        tabla.getTableHeader().setForeground(Tema.TEXTO_PRIMARIO);
+        tabla.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Tema.BORDE));
+
+        // Renderizador columna Estado
+        tabla.getColumnModel().getColumn(7).setCellRenderer(new EstadoRenderer());
+
+        // Clic en fila → cargar en formulario
+        tabla.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && tabla.getSelectedRow() >= 0) cargarDesdeTabla();
+        });
+    }
+
+    // ── Helpers de formulario ─────────────────────────────────────────────────
+    private void agregarCampo(JPanel p, GridBagConstraints gbc,
+                               int col, int fila, String label, JComponent campo) {
+        gbc.gridx = col;
+        gbc.gridy = fila;
+        p.add(UIFactory.grupoFormulario(label, campo), gbc);
+    }
+
+    private Producto leerProducto() {
+        try {
+            return new Producto(
+                    Integer.parseInt(fId.getText().trim()),
+                    fNombre.getText(),
+                    fDescripcion.getText(),
+                    Double.parseDouble(fCompra.getText().trim()),
+                    Double.parseDouble(fVenta.getText().trim()),
+                    Integer.parseInt(fStock.getText().trim()),
+                    Integer.parseInt(fMinimo.getText().trim()),
+                    fLote.getText(),
+                    fVencimiento.getText().isBlank() ? null : LocalDate.parse(fVencimiento.getText().trim()),
+                    (Categoria) fCategoria.getSelectedItem());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("ID, precios y stock deben ser números válidos.");
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException("La fecha debe tener formato AAAA-MM-DD.");
+        }
+    }
+
+    private void cargarDesdeTabla() {
+        int id = (int) modeloTabla.getValueAt(tabla.getSelectedRow(), 0);
+        Producto p = controller.buscar(id);
+        fId.setText("" + p.getIdProducto());
+        fNombre.setText(p.getNombre());
+        fDescripcion.setText(p.getDescripcion());
+        fCompra.setText("" + p.getPrecioCompra());
+        fVenta.setText("" + p.getPrecioVenta());
+        fStock.setText("" + p.getStock());
+        fMinimo.setText("" + p.getStockMinimo());
+        fLote.setText(p.getLote());
+        fVencimiento.setText(p.getFechaVencimiento() == null ? "" : p.getFechaVencimiento().toString());
+        fCategoria.setSelectedItem(p.getCategoria());
+    }
+
+    private void ejecutar(Runnable accion) {
+        try {
+            accion.run();
+            refrescar();
+            limpiar();
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Validación", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+
+    private void confirmarEliminar() {
+        if (tabla.getSelectedRow() < 0) {
+            JOptionPane.showMessageDialog(this, "Seleccione un producto en la tabla.", "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Eliminar este producto del inventario?", "Confirmar eliminación",
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            ejecutar(() -> controller.eliminar(Integer.parseInt(fId.getText().trim())));
+        }
+    }
+
+    private void limpiar() {
+        for (JTextField f : new JTextField[]{fId, fNombre, fDescripcion, fCompra,
+                fVenta, fStock, fMinimo, fLote, fVencimiento})
+            f.setText("");
+        fCategoria.setSelectedIndex(0);
+        tabla.clearSelection();
+        fNombre.requestFocus();
+    }
+
+    public void refrescar() {
+        modeloTabla.setRowCount(0);
+        for (Producto p : controller.listar()) {
+            modeloTabla.addRow(new Object[]{
+                    p.getIdProducto(),
+                    p.getNombre(),
+                    "$ " + String.format("%,.0f", p.getPrecioVenta()),
+                    p.getStock(),
+                    p.getLote(),
+                    p.getFechaVencimiento(),
+                    p.getCategoria(),
+                    estadoTexto(p)
+            });
+        }
+        lblTotal.setText("" + controller.listar().size());
+        lblBajos.setText("" + controller.stockBajo().size());
+        lblAgotados.setText("" + controller.agotados().size());
+        lblVencen.setText("" + controller.proximosAVencer().size());
+    }
+
+    private String estadoTexto(Producto p) {
+        if (p.estaAgotado())          return "AGOTADO";
+        if (p.tieneStockBajo())       return "STOCK BAJO";
+        if (p.estaProximoAVencer())   return "PRÓXIMO A VENCER";
+        return "DISPONIBLE";
+    }
+
+    // ── Renderer columna Estado ───────────────────────────────────────────────
+    private static class EstadoRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(
+                JTable t, Object value, boolean sel, boolean foc, int row, int col) {
+            super.getTableCellRendererComponent(t, value, sel, foc, row, col);
+            setHorizontalAlignment(SwingConstants.CENTER);
+            String txt = String.valueOf(value);
+            if (!sel) {
+                switch (txt) {
+                    case "DISPONIBLE"      -> { setForeground(Tema.VERDE);   setBackground(Tema.VERDE_FONDO); }
+                    case "AGOTADO"         -> { setForeground(Tema.ROJO);    setBackground(Tema.ROJO_FONDO); }
+                    case "STOCK BAJO"      -> { setForeground(Tema.NARANJA); setBackground(Tema.NARANJA_FONDO); }
+                    case "PRÓXIMO A VENCER"-> { setForeground(Tema.MORADO);  setBackground(new Color(238, 230, 255)); }
+                    default                -> { setForeground(Tema.TEXTO_PRIMARIO); setBackground(Color.WHITE); }
+                }
+            }
+            setFont(new Font("Segoe UI", Font.BOLD, 11));
+            setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+            return this;
+        }
+    }
 }
