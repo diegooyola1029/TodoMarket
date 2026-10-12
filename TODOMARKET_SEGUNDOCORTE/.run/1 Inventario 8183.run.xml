@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="1 Inventario 8183" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.todomarket.inventory.InventoryApplication" />
+    <module name="inventory-service" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

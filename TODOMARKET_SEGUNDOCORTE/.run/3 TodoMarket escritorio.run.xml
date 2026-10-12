@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="3 TodoMarket escritorio" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="minimercado.Main" />
+    <module name="todomarket-desktop" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

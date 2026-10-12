@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="2 Backend 8184" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="minimercado.backend.TodoMarketBackendApplication" />
+    <module name="todomarket-backend" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

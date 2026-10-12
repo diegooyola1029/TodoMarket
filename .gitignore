@@ -1,8 +1,0 @@
-# Archivos generados al compilar Java
-out/
-*.class
-
-# Configuración local de IDE
-.idea/
-.vscode/
-*.iml
