@@ -84,8 +84,9 @@ public class VentanaPrincipal extends JFrame {
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(Tema.SIDEBAR);
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(48, 67, 99)));
-        sidebar.setPreferredSize(new Dimension(210, 0));
+        sidebar.setBorder(BorderFactory.createMatteBorder(
+                0, 0, 0, 1, new Color(55, 70, 94)));
+        sidebar.setPreferredSize(new Dimension(220, 0));
 
         // Encabezado
         JPanel header = new JPanel(new BorderLayout());
@@ -93,13 +94,13 @@ public class VentanaPrincipal extends JFrame {
         header.setBorder(BorderFactory.createEmptyBorder(22, 20, 22, 20));
         header.setMaximumSize(new Dimension(210, 88));
 
-        JLabel appName = new JLabel("🛒 TodoMarket");
+        JLabel appName = new JLabel(" TodoMarket");
         appName.setFont(new Font("Segoe UI", Font.BOLD, 20));
         appName.setForeground(Color.WHITE);
 
         JLabel tagline  = new JLabel("Sistema de Gestión");
         tagline.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        tagline.setForeground(new Color(170, 195, 230));
+        tagline.setForeground(new Color(185, 198, 218));
 
         JPanel titles = new JPanel(new GridLayout(2, 1, 0, 2));
         titles.setOpaque(false);
@@ -108,10 +109,12 @@ public class VentanaPrincipal extends JFrame {
         header.add(titles, BorderLayout.CENTER);
         sidebar.add(header);
 
-        sidebar.add(Box.createVerticalStrut(14));
+        sidebar.add(Box.createVerticalStrut(18));
         sidebar.add(seccionLabel("MÓDULOS"));
+        sidebar.add(Box.createVerticalStrut(6));
 
         sidebar.add(navBtn("Usuarios",  "usuarios"));
+        sidebar.add(Box.createVerticalStrut(4));
         sidebar.add(navBtn("Productos", "productos"));
 
         sidebar.add(Box.createVerticalGlue());
