@@ -93,7 +93,7 @@ public class VentanaPrincipal extends JFrame {
         header.setBorder(BorderFactory.createEmptyBorder(22, 20, 22, 20));
         header.setMaximumSize(new Dimension(210, 88));
 
-        JLabel appName  = new JLabel("TodoMarket");
+        JLabel appName = new JLabel("🛒 TodoMarket");
         appName.setFont(new Font("Segoe UI", Font.BOLD, 20));
         appName.setForeground(Color.WHITE);
 

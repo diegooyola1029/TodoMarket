@@ -83,8 +83,8 @@ public class UsuarioPanel extends JPanel {
         JPanel p = new JPanel(new GridLayout(2, 1, 0, 4));
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
-        p.add(UIFactory.titulo("Gestión de Usuarios"));
-        p.add(UIFactory.subtitulo("Registra y administra los usuarios del sistema."));
+        p.add(UIFactory.titulo("¡Bienvenido a TodoMarket!"));
+        p.add(UIFactory.subtitulo("Administra tus usuarios de forma fácil y organizada."));
         return p;
     }
 
