@@ -84,6 +84,7 @@ public class VentanaPrincipal extends JFrame {
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
         sidebar.setBackground(Tema.SIDEBAR);
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(48, 67, 99)));
         sidebar.setPreferredSize(new Dimension(210, 0));
 
         // Encabezado

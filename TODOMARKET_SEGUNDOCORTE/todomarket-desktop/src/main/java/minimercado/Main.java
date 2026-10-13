@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.awt.Color;
+import java.awt.Font;
 import java.util.List;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -50,6 +52,11 @@ public class Main {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     UIManager.setLookAndFeel(info.getClassName());
+                    UIManager.put("defaultFont", new Font("Segoe UI", Font.PLAIN, 13));
+                    UIManager.put("nimbusBase", new Color(59, 130, 246));
+                    UIManager.put("nimbusBlueGrey", new Color(236, 240, 248));
+                    UIManager.put("control", new Color(248, 250, 252));
+                    UIManager.put("textForeground", new Color(17, 24, 39));
                     return;
                 }
             }

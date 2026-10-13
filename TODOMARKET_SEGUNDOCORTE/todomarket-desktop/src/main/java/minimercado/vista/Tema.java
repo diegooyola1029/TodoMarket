@@ -11,22 +11,22 @@ public final class Tema {
     private Tema() {}
 
     // Sidebar
-    public static final Color SIDEBAR        = new Color(22, 33, 55);
-    public static final Color SIDEBAR_HEADER = new Color(16, 24, 42);
-    public static final Color SIDEBAR_HOVER  = new Color(35, 52, 85);
+    public static final Color SIDEBAR        = new Color(18, 30, 49);
+    public static final Color SIDEBAR_HEADER = new Color(11, 22, 37);
+    public static final Color SIDEBAR_HOVER  = new Color(31, 52, 82);
 
-    // Acento principal (azul medio)
-    public static final Color ACENTO         = new Color(37, 99, 200);
-    public static final Color ACENTO_OSCURO  = new Color(27, 75, 155);
+    // Acento principal (azul moderno)
+    public static final Color ACENTO         = new Color(59, 130, 246);
+    public static final Color ACENTO_OSCURO  = new Color(29, 78, 216);
 
     // Fondos
-    public static final Color FONDO          = new Color(242, 245, 250);
-    public static final Color TARJETA        = Color.WHITE;
+    public static final Color FONDO          = new Color(244, 247, 252);
+    public static final Color TARJETA        = new Color(255, 255, 255);
 
     // Textos
-    public static final Color TEXTO_PRIMARIO   = new Color(22, 32, 50);
-    public static final Color TEXTO_SECUNDARIO = new Color(90, 105, 130);
-    public static final Color TEXTO_LABEL      = new Color(50, 65, 90);
+    public static final Color TEXTO_PRIMARIO   = new Color(17, 24, 39);
+    public static final Color TEXTO_SECUNDARIO = new Color(82, 95, 116);
+    public static final Color TEXTO_LABEL      = new Color(55, 65, 81);
 
     // Estados
     public static final Color VERDE            = new Color(22, 115, 70);
