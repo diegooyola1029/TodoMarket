@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
 @RequestMapping("/api/productos")
+@CrossOrigin(origins = "http://localhost:4200")
 public class ProductoRestController {
     private final ProductoService service;
 
@@ -29,7 +31,7 @@ public class ProductoRestController {
 
     @PostMapping
     public ResponseEntity<ProductoResponse> crear(@RequestBody ProductoRequest solicitud) {
-        Producto creado = service.crear(solicitud.aProducto());
+        Producto creado = service.crear(solicitud.aProducto(1));
         return ResponseEntity.created(URI.create("/api/productos/" + creado.getIdProducto()))
                 .body(ProductoResponse.desde(creado));
     }

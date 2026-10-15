@@ -1,6 +1,7 @@
 package minimercado.servicio;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import minimercado.modelo.Rol;
 import minimercado.modelo.Usuario;
 import minimercado.repositorio.UsuarioRepository;
@@ -8,14 +9,20 @@ import minimercado.repositorio.UsuarioRepository;
 /** Reglas de negocio del CRUD de usuarios. Depende de una abstracción (DIP). */
 public class UsuarioService {
     private final UsuarioRepository repository;
+    private final AtomicInteger secuenciaIds = new AtomicInteger();
 
     public UsuarioService(UsuarioRepository repository){ this.repository = repository; }
 
-    public void crear(Usuario usuario){
-        if (repository.buscarPorId(usuario.getIdPersona()).isPresent()) throw new IllegalArgumentException("Ya existe un usuario con ese ID.");
+    public synchronized Usuario crear(Usuario usuario){
         if (repository.buscarPorNombreUsuario(usuario.getNombreUsuario()).isPresent()) throw new IllegalArgumentException("Ya existe ese nombre de usuario.");
         validarDatosUnicos(usuario, -1);
-        repository.guardar(usuario);
+        int id = secuenciaIds.updateAndGet(actual ->
+                Math.max(actual, repository.listar().stream().mapToInt(Usuario::getIdPersona).max().orElse(0)) + 1);
+        Usuario creado = new Usuario(id, usuario.getNombreUsuario(), usuario.getContrasena(),
+                usuario.getDocumento(), usuario.getTelefono(), usuario.getCorreo(), usuario.getRol(),
+                usuario.isEstado());
+        repository.guardar(creado);
+        return creado;
     }
 
     public List<Usuario> listar(){ return repository.listar(); }

@@ -2,25 +2,34 @@ package com.todomarket.inventory.producto;
 
 import com.todomarket.inventory.modelo.AlertaStockObserver;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProductoService {
     private final ProductoRepository repository;
     private final AlertaStockObserver alertaObserver;
+    private final AtomicInteger secuenciaIds = new AtomicInteger();
 
     public ProductoService(ProductoRepository repository, AlertaStockObserver alertaObserver) {
         this.repository = repository;
         this.alertaObserver = alertaObserver;
     }
 
-    public Producto crear(Producto producto) {
+    public synchronized Producto crear(Producto producto) {
         if (listar().stream().anyMatch(existente ->
                 existente.getNombre().equalsIgnoreCase(producto.getNombre()))) {
             throw new IllegalArgumentException("Ya existe un producto con ese nombre.");
         }
-        producto.agregarObservador(alertaObserver);
-        repository.guardar(producto);
-        producto.notificarObservadores();
-        return producto;
+        int id = secuenciaIds.updateAndGet(actual ->
+                Math.max(actual, listar().stream().mapToInt(Producto::getIdProducto).max().orElse(0)) + 1);
+        Producto creado = new Producto(id, producto.getNombre(), producto.getDescripcion(),
+                producto.getPrecioCompra(), producto.getPrecioVenta(), producto.getStock(),
+                producto.getStockMinimo(), producto.getLote(), producto.getFechaVencimiento(),
+                producto.getCategorias());
+        creado.setEstado(producto.isEstado());
+        creado.agregarObservador(alertaObserver);
+        repository.guardar(creado);
+        creado.notificarObservadores();
+        return creado;
     }
 
     public List<Producto> listar() { return repository.listar(); }

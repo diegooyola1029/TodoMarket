@@ -1,0 +1,248 @@
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="#" aria-label="TodoMarket inicio" (click)="$event.preventDefault(); cambiarSeccion('productos')">
+      <span class="brand-mark">T</span>
+      <span><strong>TodoMarket</strong><small>Panel de gestión</small></span>
+    </a>
+
+    <span class="nav-caption">GESTIÓN</span>
+    <button class="nav-link" [class.active]="seccion === 'productos'" (click)="cambiarSeccion('productos')">
+      <span class="nav-icon">▦</span> Productos <span class="nav-count">{{ productos.length }}</span>
+    </button>
+    <button class="nav-link" [class.active]="seccion === 'usuarios'" (click)="cambiarSeccion('usuarios')">
+      <span class="nav-icon">♙</span> Usuarios <span class="nav-count">{{ usuarios.length }}</span>
+    </button>
+
+    <div class="sidebar-bottom">
+      <span class="connection-dot" [class.offline]="errorProductos || errorUsuarios"></span>
+      <span>{{ errorProductos || errorUsuarios ? 'Revisar conexión' : 'Servicios conectados' }}</span>
+      <small>TodoMarket · v2.0</small>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="breadcrumb"><span>TodoMarket</span><b>/</b>{{ seccion === 'productos' ? 'Productos' : 'Usuarios' }}</div>
+      <div class="service-status">
+        <span [class.offline]="errorProductos"></span> Inventario
+        <span class="status-divider"></span>
+        <span [class.offline]="errorUsuarios"></span> Usuarios
+      </div>
+    </header>
+
+    <section class="page">
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">ADMINISTRACIÓN</p>
+          <h1>{{ seccion === 'productos' ? 'Productos' : 'Usuarios' }}</h1>
+          <p class="page-description">
+            {{ seccion === 'productos' ? 'Administra el catálogo y las existencias de tu minimercado.' : 'Gestiona las cuentas, los roles y los datos de tus usuarios.' }}
+          </p>
+        </div>
+        <button class="button button-secondary refresh-button" (click)="seccion === 'productos' ? cargarProductos() : cargarUsuarios()">
+          <span>↻</span> Actualizar
+        </button>
+      </div>
+
+      <div class="summary-grid">
+        <article class="summary-card">
+          <div class="summary-icon blue">▦</div>
+          <div><span>Productos registrados</span><strong>{{ productos.length }}</strong></div>
+          <small class="summary-note">En el inventario</small>
+        </article>
+        <article class="summary-card">
+          <div class="summary-icon green">♙</div>
+          <div><span>Usuarios registrados</span><strong>{{ usuarios.length }}</strong></div>
+          <small class="summary-note">En el sistema</small>
+        </article>
+        <article class="summary-card">
+          <div class="summary-icon amber">!</div>
+          <div><span>Stock bajo</span><strong>{{ productosConStockBajo }}</strong></div>
+          <small class="summary-note">Requieren atención</small>
+        </article>
+      </div>
+
+      @if (mensaje) {
+        <div class="notice" [class.notice-error]="tipoMensaje === 'error'" role="status">
+          <span>{{ tipoMensaje === 'error' ? '!' : '✓' }}</span> {{ mensaje }}
+          <button type="button" aria-label="Cerrar aviso" (click)="mensaje = ''">×</button>
+        </div>
+      }
+
+      @if (seccion === 'productos') {
+        <div class="content-grid">
+          <section class="panel list-panel">
+            <div class="panel-heading">
+              <div><h2>Catálogo de productos</h2><p>{{ productos.length }} registros en total</p></div>
+              <label class="search">
+                <span>⌕</span>
+                <input type="search" name="productSearch" placeholder="Buscar producto..." [(ngModel)]="filtro">
+              </label>
+            </div>
+
+            @if (cargandoProductos) {
+              <div class="empty-state">Cargando productos…</div>
+            } @else if (errorProductos) {
+              <div class="empty-state"><strong>Servicio de inventario no disponible</strong><span>Verifica que esté activo en el puerto 8183.</span></div>
+            } @else if (productosFiltrados.length === 0) {
+              <div class="empty-state"><strong>No hay productos para mostrar</strong><span>Prueba otra búsqueda o agrega un producto nuevo.</span></div>
+            } @else {
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>PRODUCTO</th><th>CATEGORÍA</th><th>PRECIO</th><th>STOCK</th><th>ESTADO</th><th></th></tr></thead>
+                  <tbody>
+                    @for (producto of productosFiltrados; track producto.idProducto) {
+                      <tr>
+                        <td><div class="primary-cell">{{ producto.nombre }}<small>ID #{{ producto.idProducto }} · Lote {{ producto.lote }}</small></div></td>
+                        <td><span class="category-tag">{{ producto.categorias[0] || 'Otros' }}</span></td>
+                        <td class="price">{{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-0' }}</td>
+                        <td><span class="stock" [class.stock-low]="producto.stock <= producto.stockMinimo">{{ producto.stock }} uds.</span></td>
+                        <td><span class="badge" [class.badge-muted]="!producto.estado">{{ producto.estado ? 'Activo' : 'Inactivo' }}</span></td>
+                        <td><div class="row-actions">
+                          <button class="icon-button" title="Editar" aria-label="Editar producto" (click)="editarProducto(producto)">✎</button>
+                          <button class="icon-button danger" title="Eliminar" aria-label="Eliminar producto" (click)="eliminarProducto(producto)">⌫</button>
+                        </div></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+
+          <section class="panel form-panel">
+            <div class="panel-heading form-heading">
+              <div><h2>{{ productoEditando === null ? 'Nuevo producto' : 'Editar producto' }}</h2><p>El ID se asigna automáticamente</p></div>
+              <span class="form-symbol">＋</span>
+            </div>
+            <form #productFormRef="ngForm" (ngSubmit)="guardarProducto(productFormRef)">
+              <label class="field">Nombre
+                <input type="text" name="productName" [(ngModel)]="productoForm.nombre" required maxlength="100" placeholder="Ej. Arroz blanco">
+              </label>
+              <label class="field">Descripción
+                <input type="text" name="productDescription" [(ngModel)]="productoForm.descripcion" placeholder="Descripción breve">
+              </label>
+              <div class="field-row">
+                <label class="field">Precio de compra
+                  <input type="number" name="purchasePrice" [(ngModel)]="productoForm.precioCompra" required min="0" step="100">
+                </label>
+                <label class="field">Precio de venta
+                  <input type="number" name="salePrice" [(ngModel)]="productoForm.precioVenta" required min="0" step="100">
+                </label>
+              </div>
+              <div class="field-row">
+                <label class="field">Stock actual
+                  <input type="number" name="stock" [(ngModel)]="productoForm.stock" required min="0">
+                </label>
+                <label class="field">Stock mínimo
+                  <input type="number" name="minimumStock" [(ngModel)]="productoForm.stockMinimo" required min="0">
+                </label>
+              </div>
+              <div class="field-row">
+                <label class="field">Lote
+                  <input type="text" name="lot" [(ngModel)]="productoForm.lote" required placeholder="Ej. L006">
+                </label>
+                <label class="field">Vencimiento
+                  <input type="date" name="expiration" [(ngModel)]="productoForm.fechaVencimiento">
+                </label>
+              </div>
+              <label class="field">Categorías <small>Usa Ctrl/Cmd para elegir varias</small>
+                <select name="categories" [(ngModel)]="productoForm.categorias" multiple size="4">
+                  @for (categoria of categorias; track categoria) { <option [value]="categoria">{{ categoria }}</option> }
+                </select>
+              </label>
+              <label class="check-field">
+                <input type="checkbox" name="productActive" [(ngModel)]="productoForm.estado"> Producto activo
+              </label>
+              <div class="form-actions">
+                @if (productoEditando !== null) { <button type="button" class="button button-secondary" (click)="cancelarProducto()">Cancelar</button> }
+                <button type="submit" class="button button-primary" [disabled]="guardando || productFormRef.invalid">
+                  {{ guardando ? 'Guardando…' : productoEditando === null ? 'Crear producto' : 'Guardar cambios' }}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      } @else {
+        <div class="content-grid">
+          <section class="panel list-panel">
+            <div class="panel-heading">
+              <div><h2>Directorio de usuarios</h2><p>{{ usuarios.length }} cuentas en total</p></div>
+              <label class="search">
+                <span>⌕</span>
+                <input type="search" name="userSearch" placeholder="Buscar usuario..." [(ngModel)]="filtro">
+              </label>
+            </div>
+
+            @if (cargandoUsuarios) {
+              <div class="empty-state">Cargando usuarios…</div>
+            } @else if (errorUsuarios) {
+              <div class="empty-state"><strong>Servicio de usuarios no disponible</strong><span>Verifica que esté activo en el puerto 8184.</span></div>
+            } @else if (usuariosFiltrados.length === 0) {
+              <div class="empty-state"><strong>No hay usuarios para mostrar</strong><span>Prueba otra búsqueda o crea una cuenta nueva.</span></div>
+            } @else {
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>USUARIO</th><th>DOCUMENTO</th><th>CONTACTO</th><th>ROL</th><th>ESTADO</th><th></th></tr></thead>
+                  <tbody>
+                    @for (usuario of usuariosFiltrados; track usuario.idPersona) {
+                      <tr>
+                        <td><div class="primary-cell">{{ usuario.nombreUsuario }}<small>ID #{{ usuario.idPersona }}</small></div></td>
+                        <td>{{ usuario.documento }}</td>
+                        <td><div class="contact-cell">{{ usuario.correo || 'Sin correo' }}<small>{{ usuario.telefono || 'Sin teléfono' }}</small></div></td>
+                        <td><span class="category-tag">{{ usuario.rol.nombreRol }}</span></td>
+                        <td><span class="badge" [class.badge-muted]="!usuario.estado">{{ usuario.estado ? 'Activo' : 'Inactivo' }}</span></td>
+                        <td><div class="row-actions">
+                          <button class="icon-button" title="Editar" aria-label="Editar usuario" (click)="editarUsuario(usuario)">✎</button>
+                          <button class="icon-button danger" title="Eliminar" aria-label="Eliminar usuario" (click)="eliminarUsuario(usuario)">⌫</button>
+                        </div></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+
+          <section class="panel form-panel">
+            <div class="panel-heading form-heading">
+              <div><h2>{{ usuarioEditando === null ? 'Nuevo usuario' : 'Editar usuario' }}</h2><p>El ID se asigna automáticamente</p></div>
+              <span class="form-symbol user-symbol">♙</span>
+            </div>
+            <form #userFormRef="ngForm" (ngSubmit)="guardarUsuario(userFormRef)">
+              <label class="field">Nombre de usuario
+                <input type="text" name="username" [(ngModel)]="usuarioForm.nombreUsuario" required maxlength="50" placeholder="Ej. maria.g">
+              </label>
+              <label class="field">Documento
+                <input type="text" name="document" [(ngModel)]="usuarioForm.documento" required placeholder="Número de documento">
+              </label>
+              <label class="field">Correo electrónico
+                <input type="email" name="email" [(ngModel)]="usuarioForm.correo" placeholder="usuario@correo.com">
+              </label>
+              <label class="field">Teléfono
+                <input type="tel" name="phone" [(ngModel)]="usuarioForm.telefono" placeholder="300 000 0000">
+              </label>
+              <label class="field">Contraseña
+                <input type="password" name="password" [(ngModel)]="usuarioForm.contrasena" [required]="usuarioEditando === null" minlength="4" [placeholder]="usuarioEditando === null ? 'Mínimo 4 caracteres' : 'Déjala vacía para conservarla'">
+              </label>
+              <label class="field">Rol
+                <select name="role" [(ngModel)]="usuarioForm.rol.idRol" (ngModelChange)="cambiarRol($event)">
+                  @for (rol of roles; track rol.idRol) { <option [ngValue]="rol.idRol">{{ rol.nombreRol }}</option> }
+                </select>
+              </label>
+              <label class="check-field">
+                <input type="checkbox" name="userActive" [(ngModel)]="usuarioForm.estado"> Usuario activo
+              </label>
+              <div class="form-actions">
+                @if (usuarioEditando !== null) { <button type="button" class="button button-secondary" (click)="cancelarUsuario()">Cancelar</button> }
+                <button type="submit" class="button button-primary" [disabled]="guardando || userFormRef.invalid">
+                  {{ guardando ? 'Guardando…' : usuarioEditando === null ? 'Crear usuario' : 'Guardar cambios' }}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      }
+    </section>
+  </main>
+</div>

@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
 @RequestMapping("/api/usuarios")
+@CrossOrigin(origins = "http://localhost:4200")
 public class UsuarioRestController {
     private final UsuarioService service;
 
@@ -29,10 +31,9 @@ public class UsuarioRestController {
 
     @PostMapping
     public ResponseEntity<UsuarioResponse> crear(@RequestBody UsuarioRequest solicitud) {
-        Usuario usuario = solicitud.aUsuario();
-        service.crear(usuario);
-        return ResponseEntity.created(URI.create("/api/usuarios/" + usuario.getIdPersona()))
-                .body(UsuarioResponse.desde(usuario));
+        Usuario creado = service.crear(solicitud.aUsuario(1));
+        return ResponseEntity.created(URI.create("/api/usuarios/" + creado.getIdPersona()))
+                .body(UsuarioResponse.desde(creado));
     }
 
     @PutMapping("/{id}")

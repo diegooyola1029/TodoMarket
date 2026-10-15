@@ -1,35 +1,55 @@
-# TodoMarket - Segundo corte
+# TodoMarket
 
-Aplicación Java 17 organizada en tres módulos Maven. La interfaz de escritorio administra usuarios y productos; los servicios Spring Boot reciben las operaciones por API REST.
+Aplicación de gestión con dos microservicios Spring Boot y una interfaz web Angular. La interfaz de escritorio Swing existente se conserva.
 
 ## Módulos
 
-- `todomarket-desktop`: aplicación Swing y cliente REST.
-- `todomarket-backend`: API general para usuarios y productos.
-- `inventory-service`: catálogo, existencias y alertas de productos.
+- `inventory-service`: microservicio REST de productos, existencias y alertas (puerto 8183).
+- `todomarket-backend`: microservicio REST de usuarios (puerto 8184); también conserva el proxy de productos usado por Swing.
+- `web-angular`: interfaz web para gestionar productos y usuarios.
+- `todomarket-desktop`: aplicación Swing existente.
 
-## Abrir en IntelliJ IDEA
+## Ejecutar los servicios
 
-1. Abre esta carpeta con **File → Open**.
-2. Espera a que IntelliJ importe el `pom.xml` raíz y selecciona un JDK 17.
-3. Ejecuta las configuraciones compartidas en este orden:
-   - `1 Inventario 8183`
-   - `2 Backend 8184`
-   - `3 TodoMarket escritorio`
-4. Deja activos los dos servicios mientras utilizas la aplicación.
+Desde esta carpeta, inicia cada módulo en una terminal distinta:
 
-Las configuraciones están guardadas en `.run`. Si aparece un error de conexión, revisa que ambos servicios hayan iniciado correctamente.
+```powershell
+cd inventory-service
+mvn spring-boot:run
+```
 
-## Direcciones y rutas
+```powershell
+cd todomarket-backend
+mvn spring-boot:run
+```
 
-- API general: `http://localhost:8184`
-- Servicio de inventario: `http://localhost:8183`
-- Usuarios: `/api/usuarios`
-- Productos: `/api/productos`
-- Consultas de inventario: `/api/productos/stock-bajo`, `/agotados`, `/vencidos`, `/proximos-a-vencer` y `/alertas`
+## Ejecutar Angular
 
-El backend general recibe las solicitudes de productos y se comunica con el servicio de inventario por HTTP.
+Con ambos servicios activos, inicia el frontend:
 
-## Datos de ejemplo
+```powershell
+cd web-angular
+npm install
+npm start
+```
 
-Al iniciar, se cargan tres usuarios y cinco productos. Los repositorios actuales guardan los datos en memoria; al detener un servicio, sus cambios se pierden y vuelven a cargarse los datos de ejemplo.
+Abre `http://localhost:4200`. Angular consume usuarios desde `http://localhost:8184/api/usuarios` y productos desde `http://localhost:8183/api/productos`.
+
+## Funcionalidades
+
+- Crear, listar, editar, buscar y eliminar productos y usuarios.
+- Los IDs se asignan automáticamente en cada servicio; no se solicitan en los formularios de creación.
+- Los productos incluyen categorías, precios, stock, lote y fecha de vencimiento.
+- Los usuarios incluyen documento, contacto, rol y estado.
+
+Los repositorios actuales mantienen los datos en memoria. Al reiniciar cada servicio, se vuelven a cargar los datos de ejemplo y se reinicia la secuencia de IDs. La configuración CORS permite el origen local de Angular (`http://localhost:4200`).
+
+## Ejecutar la aplicación Swing en IntelliJ IDEA
+
+Abre esta carpeta, selecciona un JDK 17 o superior y usa las configuraciones en `.run` en este orden:
+
+1. `1 Inventario 8183`
+2. `2 Backend 8184`
+3. `3 TodoMarket escritorio`
+
+Mantén activos los dos servicios mientras usas la aplicación.

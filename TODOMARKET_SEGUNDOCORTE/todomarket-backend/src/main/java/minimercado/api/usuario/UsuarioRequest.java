@@ -14,8 +14,12 @@ public record UsuarioRequest(
         boolean estado) {
 
     public Usuario aUsuario() {
+        return aUsuario(idPersona);
+    }
+
+    public Usuario aUsuario(int id) {
         Rol rolUsuario = rol == null ? null : new Rol(rol.idRol(), rol.nombreRol(), rol.descripcion());
-        return new Usuario(idPersona, nombreUsuario, contrasena, documento, telefono, correo, rolUsuario, estado);
+        return new Usuario(id, nombreUsuario, contrasena, documento, telefono, correo, rolUsuario, estado);
     }
 
     public static UsuarioRequest desde(Usuario usuario) {

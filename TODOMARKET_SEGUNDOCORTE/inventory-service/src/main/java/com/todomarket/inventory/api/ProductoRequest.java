@@ -18,7 +18,11 @@ public record ProductoRequest(
         boolean estado) {
 
     public Producto aProducto() {
-        Producto producto = new Producto(idProducto, nombre, descripcion, precioCompra, precioVenta,
+        return aProducto(idProducto);
+    }
+
+    public Producto aProducto(int id) {
+        Producto producto = new Producto(id, nombre, descripcion, precioCompra, precioVenta,
                 stock, stockMinimo, lote, fechaVencimiento, categorias);
         producto.setEstado(estado);
         return producto;
