@@ -1,17 +1,19 @@
 package minimercado.api.usuario;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import minimercado.modelo.Usuario;
 
+@Schema(name = "UsuarioResponse", description = "Usuario devuelto por la API; no incluye la contraseña.")
 public record UsuarioResponse(
-        int idPersona,
-        String nombreUsuario,
-        String documento,
-        String telefono,
-        String correo,
-        RolResponse rol,
-        boolean estado,
-        LocalDate fechaCreacion) {
+        @Schema(description = "Identificador asignado", example = "1") int idPersona,
+        @Schema(description = "Nombre de usuario", example = "admin") String nombreUsuario,
+        @Schema(description = "Documento", example = "1000001") String documento,
+        @Schema(description = "Teléfono", example = "3001111001") String telefono,
+        @Schema(description = "Correo", example = "admin@example.com") String correo,
+        @Schema(description = "Rol") RolResponse rol,
+        @Schema(description = "Estado activo", example = "true") boolean estado,
+        @Schema(description = "Fecha de creación", example = "2026-11-19") LocalDate fechaCreacion) {
 
     public static UsuarioResponse desde(Usuario usuario) {
         var rol = usuario.getRol();
@@ -26,5 +28,9 @@ public record UsuarioResponse(
         return new Usuario(idPersona, nombreUsuario, "", documento, telefono, correo, rolUsuario, estado);
     }
 
-    public record RolResponse(int idRol, String nombreRol, String descripcion) { }
+    @Schema(name = "RolResponse", description = "Rol incluido en la respuesta del usuario.")
+    public record RolResponse(
+            @Schema(description = "ID del rol", example = "1") int idRol,
+            @Schema(description = "Nombre", example = "Administrador") String nombreRol,
+            @Schema(description = "Descripción", example = "Gerente") String descripcion) { }
 }
