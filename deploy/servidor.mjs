@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { createServer, request as solicitarHttp } from 'node:http';
@@ -8,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const dirDeploy = fileURLToPath(new URL('.', import.meta.url));
 const runtime = resolve(process.env.TODOMARKET_RUNTIME_DIR || join(dirDeploy, '..', 'runtime'));
-const { USUARIOS_TOKEN, DEMO_USERNAME = 'evaluador', DEMO_PASSWORD } = process.env;
+const { USUARIOS_TOKEN } = process.env;
 const puerto = Number(process.env.PORT || 10000);
 const hostPublico = process.env.BIND_HOST || '0.0.0.0';
 const hostInterno = '127.0.0.1';
@@ -19,12 +18,8 @@ if (!['http:', 'https:'].includes(usuarios.protocol) ||
     usuarios.username || usuarios.password || usuarios.pathname !== '/' || usuarios.search || usuarios.hash) {
   throw new Error('USUARIOS_URL debe ser un origen HTTP o HTTPS.');
 }
-if (!DEMO_PASSWORD) throw new Error('Configura DEMO_PASSWORD en el entorno del servidor.');
 const solicitar = usuarios.protocol === 'https:' ? solicitarHttps : solicitarHttp;
 const servicioHeaders = USUARIOS_TOKEN ? { 'X-TodoMarket-Token': USUARIOS_TOKEN } : {};
-const huella = (texto) => createHash('sha256').update(texto).digest();
-const auth = huella('Basic ' + Buffer.from(DEMO_USERNAME + ':' + DEMO_PASSWORD, 'utf8').toString('base64'));
-const autenticado = (req) => timingSafeEqual(huella(req.headers.authorization || ''), auth);
 
 const mime = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -35,12 +30,6 @@ const mime = {
 function json(res, status, objeto) {
   if (!res.headersSent) res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(objeto));
-}
-
-function pedirAcceso(res) {
-  res.setHeader('WWW-Authenticate', 'Basic realm="TodoMarket", charset="UTF-8"');
-  res.setHeader('Cache-Control', 'no-store');
-  json(res, 401, { message: 'Abre /acceso e inicia sesión para editar.' });
 }
 
 async function archivo(req, res, base, ruta) {
@@ -114,15 +103,7 @@ const servidor = createServer((req, res) => {
     const url = new URL(req.url, origen);
     const ruta = decodeURIComponent(url.pathname);
     if (ruta === '/salud' && leer) return saludable(res);
-    if (ruta === '/acceso' && leer) {
-      if (!autenticado(req)) return pedirAcceso(res);
-      res.writeHead(303, { Location: '/', 'Cache-Control': 'no-store' }).end();
-      return;
-    }
-    if (ruta.startsWith('/api/')) {
-      if (!leer && !autenticado(req)) return pedirAcceso(res);
-      return alBackend(req, res, url);
-    }
+    if (ruta.startsWith('/api/')) return alBackend(req, res, url);
     if (!leer) return json(res, 405, { message: 'Método no permitido.' });
     if (ruta === '/swagger-ui.html' || ruta.startsWith('/swagger-ui/') ||
         ruta === '/v3/api-docs' || ruta.startsWith('/v3/api-docs/')) {

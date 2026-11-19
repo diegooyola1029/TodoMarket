@@ -2,21 +2,20 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as esperar } from 'node:timers/promises';
 
-const { TODOMARKET_URL, DEMO_USERNAME = 'evaluador', DEMO_PASSWORD } = process.env;
-if (!TODOMARKET_URL || !DEMO_PASSWORD) {
-  throw new Error('Configura TODOMARKET_URL y DEMO_PASSWORD antes de ejecutar esta prueba.');
+const { TODOMARKET_URL } = process.env;
+if (!TODOMARKET_URL) {
+  throw new Error('Configura TODOMARKET_URL antes de ejecutar esta prueba.');
 }
 const base = new URL(TODOMARKET_URL).origin;
-const auth = 'Basic ' + Buffer.from(DEMO_USERNAME + ':' + DEMO_PASSWORD, 'utf8').toString('base64');
 async function pedir(ruta, status, opciones) {
   const res = await fetch(base + ruta, { signal: AbortSignal.timeout(15_000), ...opciones });
   assert.equal(res.status, status, (opciones?.method ?? 'GET') + ' ' + ruta);
   return res;
 }
 async function api(ruta, status, method = 'GET', data) {
-  return pedir(ruta, status, { method, headers: {
-    Authorization: auth, ...(data ? { 'Content-Type': 'application/json' } : {})
-  }, ...(data && { body: JSON.stringify(data) }) });
+  return pedir(ruta, status, { method, ...(data && {
+    headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+  }) });
 }
 
 let listo = false;
@@ -27,6 +26,8 @@ for (let intento = 0; intento < 60 && !listo; intento++) {
 }
 assert(listo, 'No están disponibles ambos servicios y MongoDB.');
 const portada = await (await pedir('/', 200)).text();
+assert.doesNotMatch(portada, /href="\/acceso"/);
+await pedir('/acceso', 404);
 for (const interfaz of ['angular','react']) {
   assert(portada.includes('href="/' + interfaz + '/"'));
   const pagina = await (await pedir('/' + interfaz + '/', 200)).text();
@@ -43,10 +44,6 @@ assert(spec.paths['/api/productos'] && spec.paths['/api/usuarios']);
 for (const recurso of ['productos','usuarios']) {
   assert(Array.isArray(await (await pedir('/api/' + recurso, 200)).json()));
 }
-const rechazo = await pedir('/api/productos', 401, { method: 'POST' });
-assert.match(rechazo.headers.get('www-authenticate'), /^Basic /);
-await pedir('/acceso', 401);
-await api('/acceso', 200);
 const marca = randomUUID();
 const producto = { nombre: 'Verificación ' + marca, stock: 4, lote: 'QA-' + marca, estado: true };
 const usuario = { nombreUsuario: 'qa.' + marca, documento: 'QA-' + marca, estado: true,
@@ -73,4 +70,4 @@ try {
   for (const ruta of rutas) await api(ruta, 204, 'DELETE').catch(() => {});
 }
 console.log(JSON.stringify({ url: base, salud: 200, angular: 200, react: 200, swagger: 200,
-  escrituraSinAcceso: 401, crudProductos: true, crudUsuarios: true }, null, 2));
+  crudProductos: true, crudUsuarios: true }, null, 2));

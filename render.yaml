@@ -10,7 +10,3 @@ services:
         sync: false
       - key: USUARIOS_TOKEN
         sync: false
-      - key: DEMO_USERNAME
-        value: evaluador
-      - key: DEMO_PASSWORD
-        generateValue: true
