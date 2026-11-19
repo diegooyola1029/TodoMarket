@@ -1,0 +1,72 @@
+{
+  "version": "9.0.4",
+  "base": "todomarket_demo",
+  "productos": [
+    {
+      "_id": 1,
+      "nombre": "Arroz blanco 500 g",
+      "stock": 20,
+      "categorias": [
+        "Granos"
+      ]
+    },
+    {
+      "_id": 2,
+      "nombre": "Leche entera 1 L",
+      "stock": 3,
+      "categorias": [
+        "Lácteos"
+      ]
+    },
+    {
+      "_id": 3,
+      "nombre": "Jabón de tocador",
+      "stock": 0,
+      "categorias": [
+        "Aseo"
+      ]
+    }
+  ],
+  "usuarios": [
+    {
+      "_id": 1,
+      "nombreUsuario": "operadora.demo",
+      "rol": {
+        "idRol": 2,
+        "nombreRol": "Empleado",
+        "descripcion": "Cajero"
+      }
+    },
+    {
+      "_id": 2,
+      "nombreUsuario": "cliente.demo",
+      "rol": {
+        "idRol": 3,
+        "nombreRol": "Cliente",
+        "descripcion": "Cliente del minimercado"
+      }
+    }
+  ],
+  "indicesUsuarios": [
+    {
+      "nombre": "nombreNormalizado",
+      "unico": true,
+      "disperso": false
+    },
+    {
+      "nombre": "documento",
+      "unico": true,
+      "disperso": false
+    },
+    {
+      "nombre": "telefono",
+      "unico": true,
+      "disperso": true
+    },
+    {
+      "nombre": "correoNormalizado",
+      "unico": true,
+      "disperso": true
+    }
+  ]
+}

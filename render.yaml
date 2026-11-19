@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: todomarket-tercer-corte
+    runtime: docker
+    plan: free
+    region: virginia
+    healthCheckPath: /
+    envVars:
+      - key: USUARIOS_URL
+        sync: false
+      - key: USUARIOS_TOKEN
+        sync: false
+      - key: DEMO_USERNAME
+        value: evaluador
+      - key: DEMO_PASSWORD
+        generateValue: true

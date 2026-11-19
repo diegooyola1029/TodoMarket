@@ -1,0 +1,43 @@
+{
+  "procesos": {
+    "productos": 26504,
+    "usuarios": 43536,
+    "todomarket": 24176,
+    "productosTrasReinicio": 17536,
+    "usuariosTrasReinicio": 2888
+  },
+  "crud": {
+    "alta": 201,
+    "consulta": 200,
+    "actualizacion": 200,
+    "baja": 204,
+    "consultaTrasBaja": 404,
+    "validacion": 400,
+    "duplicado": 409,
+    "productos": true,
+    "usuarios": true
+  },
+  "mongodb": {
+    "stock": 14,
+    "rol": "Cliente",
+    "hash": true
+  },
+  "navegador": {
+    "angular": true,
+    "react": true,
+    "stockEditadoDesdeReactYConsultadoEnAngular": 18
+  },
+  "swagger": {
+    "productos": 200,
+    "usuarios": 200,
+    "todomarket": 200
+  },
+  "integracion": {
+    "registroCoincideEntreApis": true,
+    "rutaProductosConServicioDetenido": 503,
+    "rutaUsuariosMientrasTanto": 200,
+    "recuperacion": 200,
+    "productosDirectoSinToken": 403,
+    "usuariosDirectoSinToken": 403
+  }
+}
