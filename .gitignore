@@ -1,0 +1,10 @@
+target/
+node_modules/
+dist/
+.angular/
+.env
+.env.*
+!.env.example
+.idea/
+*.iml
+*.log
